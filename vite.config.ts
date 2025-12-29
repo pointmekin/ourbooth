@@ -24,7 +24,7 @@ const config = defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
-  },
+  }
 })
 
 export default config

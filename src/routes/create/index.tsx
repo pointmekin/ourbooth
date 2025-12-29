@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState, useRef } from 'react'
 import { toPng } from 'html-to-image'
 import { authClient } from '@/lib/auth-client'
-import { LayoutGrid, Upload, Smile, Wand2, LucideIcon, LogIn, LogOut, User } from 'lucide-react'
+import { LayoutGrid, Upload, Smile, Wand2, LucideIcon, LogIn, LogOut } from 'lucide-react'
 import { deductCreditFn } from '@/server/export'
 import { toast } from "sonner"
 
@@ -38,14 +38,33 @@ function PhotoboothEditor() {
     reader.readAsDataURL(file)
   }
 
-  const addSticker = (emoji: string) => {
-      setStickers([...stickers, { id: Date.now(), x: 50, y: 50, emoji }])
+  const addSticker = (emoji: string, x = 50, y = 50) => {
+      setStickers([...stickers, { id: Date.now(), x, y, emoji }])
       toast(
          <div className="flex items-center gap-2">
              <span className="text-xl">{emoji}</span>
              <span className="font-semibold text-sm">Added to canvas!</span>
          </div>
       )
+  }
+
+  const handleDragStartFromSidebar = (e: React.DragEvent, emoji: string) => {
+      e.dataTransfer.setData('emoji', emoji)
+  }
+
+  const handleDropIntoCanvas = (e: React.DragEvent) => {
+      e.preventDefault()
+      if (!stripRef.current) return
+
+      const emoji = e.dataTransfer.getData('emoji')
+      if (!emoji) return
+
+      const rect = stripRef.current.getBoundingClientRect()
+      
+      const x = Math.min(100, Math.max(0, ((e.clientX - rect.left) / rect.width) * 100))
+      const y = Math.min(100, Math.max(0, ((e.clientY - rect.top) / rect.height) * 100))
+
+      addSticker(emoji, x, y)
   }
 
   // Unified Drag Logic
@@ -111,49 +130,59 @@ function PhotoboothEditor() {
       setIsExporting(true)
 
       // 1. Wait for UI to update (hide watermarks etc)
-      setTimeout(async () => {
-          try {
-              // 2. Generate Image Blob FIRST using html-to-image
-              console.log("Generating image with html-to-image...")
-              const dataUrl = await toPng(stripRef.current!, {
-                  cacheBust: true,
-                  pixelRatio: 3, // High quality
-                  backgroundColor: '#ffffff'
-              }).catch(e => {
-                  throw new Error(`Image generation failed: ${e.message}`)
-              })
+      // Longer delay for mobile/safari to ensure DOM state is settled
+      await new Promise(resolve => setTimeout(resolve, 500))
 
-              if (!dataUrl || dataUrl.length < 100) {
-                  throw new Error("Generated image is empty or invalid.")
-              }
+      try {
+          const node = stripRef.current
+          
+          console.log("Generating image with html-to-image...")
+          
+          // Safari Workaround: Double capture
+          // First call warms up the cache and fixes common Safari blank image issues
+          await toPng(node, { cacheBust: true, pixelRatio: 1 }).catch(() => {})
+          
+          // Second call for the actual high-quality export
+          const dataUrl = await toPng(node, {
+              cacheBust: true,
+              pixelRatio: 2, // 2x is plenty for high quality and safer for iOS memory limits
+              backgroundColor: '#ffffff',
+          }).catch(e => {
+              throw new Error(`Image generation failed: ${e.message}`)
+          })
 
-              // 3. Deduct Credit
-              console.log("Deducting credit...")
-              const result = await deductCreditFn().catch(e => {
-                  throw new Error(`Server deduction failed: ${e.message}`)
-              })
-
-              if (!result.success) {
-                  throw new Error("Credit deduction failed (Unknown error)")
-              }
-
-              // 4. Download (Only if both succeeded)
-              console.log("Downloading...")
-              const link = document.createElement('a')
-              link.download = `ourbooth-${Date.now()}.png`
-              link.href = dataUrl
-              link.click()
-              
-              authClient.getSession() // Refresh UI credits
-              alert(`Export successful! Remaining credits: ${result.remainingCredits}`)
-
-          } catch (err: any) {
-              console.error("Export Process Failed:", err)
-              alert(`Export Failed: ${err.message}`)
-          } finally {
-              setIsExporting(false)
+          if (!dataUrl || dataUrl.length < 100) {
+              throw new Error("Generated image is empty or invalid.")
           }
-      }, 100)
+
+          // 2. Deduct Credit
+          console.log("Deducting credit...")
+          const result = await deductCreditFn().catch(e => {
+              throw new Error(`Server deduction failed: ${e.message}`)
+          })
+
+          if (!result.success) {
+              throw new Error("Credit deduction failed (Unknown error)")
+          }
+
+          // 3. Download
+          console.log("Downloading...")
+          const link = document.createElement('a')
+          link.download = `ourbooth-${Date.now()}.png`
+          link.href = dataUrl
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+          
+          authClient.getSession() // Refresh UI credits
+          toast.success("Export successful!")
+
+      } catch (err: any) {
+          console.error("Export Process Failed:", err)
+          alert(`Export Failed: ${err.message}`)
+      } finally {
+          setIsExporting(false)
+      }
   }
 
   const currentLayout = LAYOUTS[selectedLayout]
@@ -213,7 +242,7 @@ function PhotoboothEditor() {
                </button>
                <button 
                 onClick={handleExport}
-                className="px-4 md:px-6 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs md:text-sm font-semibold rounded-full shadow-[0_0_20px_-5px_rgba(225,29,72,0.6)] transition-all hover:scale-105 active:scale-95"
+                className="px-4 md:px-6 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs md:text-sm font-semibold rounded-full shadow-[0_0_20px_-5px_rgba(225,29,72,0.6)] transition-all"
                >
                    {session ? `Export (1 Credit)` : 'Sign in'}
                </button>
@@ -222,28 +251,34 @@ function PhotoboothEditor() {
 
         {/* Workspace */}
         <div className="flex-1 flex items-center justify-center p-4 md:p-10 bg-[radial-gradient(ellipse_at_center,var(--tw-gradient-stops))] from-neutral-900 via-neutral-950 to-neutral-950 overflow-auto">
-           {/* The Strip */}
-            <div 
-                ref={stripRef}
-                className={`transform transition-all duration-500 ${isExporting ? 'scale-100' : 'hover:scale-[1.01]'} flex flex-col relative group select-none shadow-2xl`}
-                style={{ 
-                    // Dynamic scaling for mobile responsiveness
-                    height: selectedLayout === '1x4' ? '800px' : '600px', 
-                    width: selectedLayout === '1x4' ? '200px' : '400px',
-                    // scale logic handled by CSS transform usually, but hard pixel sizes are safer for export
-                    transform: `scale(${window.innerWidth < 768 ? 0.6 : 1})`, // Simple scaling for mobile preview
-                    backgroundColor: '#ffffff',
-                    color: '#000000',
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', 
-                    border: '1px solid rgba(255, 255, 255, 0.1)'
-                }}
-            >
+           {/* Scaling Wrapper: Moving transform here so stripRef itself is not transformed during capture */}
+           <div 
+               className="flex items-center justify-center transition-transform duration-500"
+               style={{ 
+                   transform: `scale(${typeof window !== 'undefined' && window.innerWidth < 768 ? (selectedLayout === '1x4' ? 0.5 : 0.6) : 1})`,
+                   transformOrigin: 'center'
+               }}
+           >
+                <div 
+                    ref={stripRef}
+                    className="flex flex-col relative group select-none shadow-2xl"
+                    style={{ 
+                        height: selectedLayout === '1x4' ? '800px' : '600px', 
+                        width: selectedLayout === '1x4' ? '200px' : '400px',
+                        backgroundColor: '#ffffff',
+                        color: '#000000',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', 
+                        border: '1px solid rgba(255, 255, 255, 0.1)'
+                    }}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={handleDropIntoCanvas}
+                >
                 {/* Watermark Overlay and Hover Glow - Remove from DOM during export */}
                 {!isExporting && (
                     <>
                         <div className="absolute inset-0 z-30 pointer-events-none opacity-30 flex items-center justify-center overflow-hidden">
                             <div 
-                                className="rotate-[-45deg] text-6xl font-bold whitespace-nowrap tracking-widest p-4"
+                                className="-rotate-45 text-6xl font-bold whitespace-nowrap tracking-widest p-4"
                                 style={{ 
                                     color: 'rgba(0,0,0,0.1)', 
                                     border: '4px solid rgba(0,0,0,0.1)' 
@@ -258,10 +293,10 @@ function PhotoboothEditor() {
                 
                 {/* Photo Grid Placeholder */}
                 <div 
-                    className="flex-1 grid gap-2.5 p-4 box-border relative z-0"
+                    className="flex-1 min-h-0 grid gap-2.5 p-4 box-border relative z-0"
                     style={{ 
-                        gridTemplateColumns: `repeat(${currentLayout.cols}, 1fr)`,
-                        gridTemplateRows: `repeat(${currentLayout.rows}, 1fr)`
+                        gridTemplateColumns: `repeat(${currentLayout.cols}, minmax(0, 1fr))`,
+                        gridTemplateRows: `repeat(${currentLayout.rows}, minmax(0, 1fr))`
                     }}
                 >
                     {Array.from({ length: currentLayout.count }).map((_, i) => (
@@ -282,7 +317,12 @@ function PhotoboothEditor() {
                             )}
                             
                             {images[i] ? (
-                                <img src={images[i]!} alt={`Slot ${i}`} className="w-full h-full object-cover" />
+                                <img 
+                                    src={images[i]!} 
+                                    alt={`Slot ${i}`} 
+                                    className="w-full h-full object-cover" 
+                                    crossOrigin="anonymous" 
+                                />
                             ) : (
                                 <div className={`absolute inset-0 flex items-center justify-center ${!isExporting ? 'group-hover/slot:text-neutral-400 transition-colors' : ''}`}>
                                     <span className="text-4xl font-light" style={{ color: '#d4d4d4' }}>+</span>
@@ -330,6 +370,7 @@ function PhotoboothEditor() {
                     </span>
                 </div>
             </div>
+          </div>
         </div>
       </main>
 
@@ -381,6 +422,8 @@ function PhotoboothEditor() {
                      <button 
                         key={emoji}
                         onClick={() => addSticker(emoji)}
+                        draggable
+                        onDragStart={(e) => handleDragStartFromSidebar(e, emoji)}
                         className="aspect-square flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-lg text-2xl transition-colors"
                      >
                          {emoji}
