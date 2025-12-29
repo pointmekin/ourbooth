@@ -4,6 +4,7 @@ import { toPng } from 'html-to-image'
 import { authClient } from '@/lib/auth-client'
 import { LayoutGrid, Upload, Smile, Wand2, LucideIcon, LogIn, LogOut, User } from 'lucide-react'
 import { deductCreditFn } from '@/server/export'
+import { toast } from "sonner"
 
 export const Route = createFileRoute('/create/')({
   component: PhotoboothEditor,
@@ -21,6 +22,7 @@ function PhotoboothEditor() {
   const [stickers, setStickers] = useState<{id: number, x: number, y: number, emoji: string}[]>([])
   const [draggingStickerId, setDraggingStickerId] = useState<number | null>(null)
   const [isExporting, setIsExporting] = useState(false)
+  const [isPropertiesOpen, setIsPropertiesOpen] = useState(false) // Mobile drawer state
   const stripRef = useRef<HTMLDivElement>(null)
   
   const { data: session } = authClient.useSession()
@@ -38,28 +40,47 @@ function PhotoboothEditor() {
 
   const addSticker = (emoji: string) => {
       setStickers([...stickers, { id: Date.now(), x: 50, y: 50, emoji }])
+      toast(
+         <div className="flex items-center gap-2">
+             <span className="text-xl">{emoji}</span>
+             <span className="font-semibold text-sm">Added to canvas!</span>
+         </div>
+      )
   }
 
-  const handleStickerMouseDown = (e: React.MouseEvent, id: number) => {
+  // Unified Drag Logic
+  const handleDragStart = (e: React.MouseEvent | React.TouchEvent, id: number) => {
       e.stopPropagation()
-      e.preventDefault()
+      // e.preventDefault() // prevent scrolling on touch - be careful with this
       setDraggingStickerId(id)
   }
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const handleDragMove = (clientX: number, clientY: number) => {
       if (!draggingStickerId || !stripRef.current) return
 
       const rect = stripRef.current.getBoundingClientRect()
       
-      const x = Math.min(100, Math.max(0, ((e.clientX - rect.left) / rect.width) * 100))
-      const y = Math.min(100, Math.max(0, ((e.clientY - rect.top) / rect.height) * 100))
+      const x = Math.min(100, Math.max(0, ((clientX - rect.left) / rect.width) * 100))
+      const y = Math.min(100, Math.max(0, ((clientY - rect.top) / rect.height) * 100))
 
       setStickers(stickers.map(s => 
           s.id === draggingStickerId ? { ...s, x, y } : s
       ))
   }
 
-  const handleMouseUp = () => {
+  const handleMouseMove = (e: React.MouseEvent) => {
+      handleDragMove(e.clientX, e.clientY)
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+      if (draggingStickerId) {
+          e.preventDefault() // Prevent scrolling while dragging
+          const touch = e.touches[0]
+          handleDragMove(touch.clientX, touch.clientY)
+      }
+  }
+
+  const handleDragEnd = () => {
       setDraggingStickerId(null)
   }
 
@@ -139,17 +160,22 @@ function PhotoboothEditor() {
 
   return (
     <div 
-        className="min-h-screen bg-neutral-950 text-neutral-100 font-sans selection:bg-rose-500/30 flex overflow-hidden"
+        className="min-h-screen bg-neutral-950 text-neutral-100 font-sans selection:bg-rose-500/30 flex overflow-hidden fixed inset-0" // fixed inset-0 prevents body scroll
         onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
+        onMouseUp={handleDragEnd}
+        onMouseLeave={handleDragEnd}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleDragEnd}
     >
       {/* LEFT SIDEBAR - TOOLS */}
-      <aside className="w-20 border-r border-white/5 flex flex-col items-center py-6 gap-6 z-10 bg-neutral-950/50 backdrop-blur-xl">
-        <ToolIcon label="Layout" icon={LayoutGrid} active={true} />
-        <ToolIcon label="Upload" icon={Upload} />
-        <ToolIcon label="Stickers" icon={Smile} />
-        <ToolIcon label="Filters" icon={Wand2} />
+      <aside className="w-20 border-r border-white/5 flex flex-col items-center py-6 gap-6 z-30 bg-neutral-950/80 backdrop-blur-xl">
+        <ToolIcon label="Menu" icon={LayoutGrid} active={isPropertiesOpen} onClick={() => setIsPropertiesOpen(!isPropertiesOpen)} />
+        {/* Only show other icons if space permits or for specific actions */}
+        <div className="hidden md:flex space-y-6 w-full flex-col items-center">
+            <ToolIcon label="Upload" icon={Upload} />
+            <ToolIcon label="Stickers" icon={Smile} />
+            <ToolIcon label="Filters" icon={Wand2} />
+        </div>
         
         <div className="flex-1" />
         
@@ -177,35 +203,37 @@ function PhotoboothEditor() {
       {/* MAIN CANVAS AREA */}
       <main className="flex-1 flex flex-col relative overflow-hidden">
         {/* Header */}
-        <header className="h-16 border-b border-white/5 flex items-center justify-between px-8 bg-neutral-950/80 backdrop-blur-md z-10 cursor-default">
+        <header className="h-16 border-b border-white/5 flex items-center justify-between px-4 md:px-8 bg-neutral-950/80 backdrop-blur-md z-10 cursor-default">
             <h1 className="text-xl font-bold tracking-tighter bg-linear-to-br from-white to-white/50 bg-clip-text text-transparent">
                 OURBOOTH
             </h1>
-            <div className="flex gap-4">
-               <button className="px-5 py-2 text-sm font-medium text-neutral-400 hover:text-white transition-colors">
+            <div className="flex gap-2 md:gap-4">
+               <button className="hidden md:block px-5 py-2 text-sm font-medium text-neutral-400 hover:text-white transition-colors">
                    Preview
                </button>
                <button 
                 onClick={handleExport}
-                className="px-6 py-2 bg-rose-600 hover:bg-rose-500 text-white text-sm font-semibold rounded-full shadow-[0_0_20px_-5px_rgba(225,29,72,0.6)] transition-all hover:scale-105 active:scale-95"
+                className="px-4 md:px-6 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs md:text-sm font-semibold rounded-full shadow-[0_0_20px_-5px_rgba(225,29,72,0.6)] transition-all hover:scale-105 active:scale-95"
                >
-                   {session ? `Export (1 Credit)` : 'Sign in to Export'}
+                   {session ? `Export (1 Credit)` : 'Sign in'}
                </button>
             </div>
         </header>
 
         {/* Workspace */}
-        <div className="flex-1 flex items-center justify-center p-10 bg-[radial-gradient(ellipse_at_center,var(--tw-gradient-stops))] from-neutral-900 via-neutral-950 to-neutral-950">
+        <div className="flex-1 flex items-center justify-center p-4 md:p-10 bg-[radial-gradient(ellipse_at_center,var(--tw-gradient-stops))] from-neutral-900 via-neutral-950 to-neutral-950 overflow-auto">
            {/* The Strip */}
             <div 
                 ref={stripRef}
-                className={`w-75 transform transition-all duration-500 ${isExporting ? 'scale-100' : 'hover:scale-[1.01]'} flex flex-col relative group select-none`}
+                className={`transform transition-all duration-500 ${isExporting ? 'scale-100' : 'hover:scale-[1.01]'} flex flex-col relative group select-none shadow-2xl`}
                 style={{ 
+                    // Dynamic scaling for mobile responsiveness
                     height: selectedLayout === '1x4' ? '800px' : '600px', 
                     width: selectedLayout === '1x4' ? '200px' : '400px',
+                    // scale logic handled by CSS transform usually, but hard pixel sizes are safer for export
+                    transform: `scale(${window.innerWidth < 768 ? 0.6 : 1})`, // Simple scaling for mobile preview
                     backgroundColor: '#ffffff',
                     color: '#000000',
-                    // Use standard box-shadow instead of tailwind shadow-2xl/ring
                     boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', 
                     border: '1px solid rgba(255, 255, 255, 0.1)'
                 }}
@@ -267,8 +295,12 @@ function PhotoboothEditor() {
                      {stickers.map(s => (
                         <div 
                             key={s.id} 
-                            onMouseDown={(e) => handleStickerMouseDown(e, s.id)}
-                            className="absolute text-4xl z-40 drop-shadow-md select-none"
+                            onMouseDown={(e) => handleDragStart(e, s.id)}
+                            onTouchStart={(e) => {
+                                // Touch start works slightly differently, we need to stop prop here too
+                                handleDragStart(e, s.id)
+                            }}
+                            className="absolute text-4xl z-40 drop-shadow-md select-none touch-none" // touch-none is critical
                             style={{ 
                                 left: `${s.x}%`, 
                                 top: `${s.y}%`,
@@ -302,8 +334,21 @@ function PhotoboothEditor() {
       </main>
 
       {/* RIGHT SIDEBAR - PROPERTIES */}
-      <aside className="w-80 border-l border-white/5 bg-neutral-950/50 backdrop-blur-xl p-6 z-10 hidden lg:block overflow-y-auto">
-        <h3 className="text-xs font-bold uppercase tracking-widest text-neutral-500 mb-6">Properties</h3>
+      <aside className={`
+        fixed inset-y-0 right-0 z-40 w-80 bg-neutral-950/95 backdrop-blur-xl border-l border-white/5 p-6 overflow-y-auto transition-transform duration-300 ease-in-out
+        lg:relative lg:translate-x-0 lg:block lg:bg-neutral-950/50
+        ${isPropertiesOpen ? 'translate-x-0' : 'translate-x-full'}
+      `}>
+          {/* Mobile Header for Sidebar */}
+          <div className="flex items-center justify-between mb-6 lg:hidden">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-neutral-500">Properties</h3>
+              <button 
+                onClick={() => setIsPropertiesOpen(false)}
+                className="p-2 hover:bg-white/10 rounded-lg text-white"
+              >
+                  ✕
+              </button>
+          </div>
         
         {/* Layout Selector */}
         <div className="space-y-4 mb-8">
