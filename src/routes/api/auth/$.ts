@@ -9,12 +9,22 @@ export const Route = createFileRoute("/api/auth/$")({
     server: {
         handlers: {
             GET: async ({ request }: { request: Request }) => {
-                const { auth } = await import("@/lib/auth");
-                return auth.handler(request);
+                try {
+                    const { auth } = await import("@/lib/auth");
+                    return await auth.handler(request);
+                } catch (e: any) {
+                    console.error("Auth GET error:", e);
+                    return new Response(JSON.stringify({ error: e.message, stack: e.stack }), { status: 500 });
+                }
             },
             POST: async ({ request }: { request: Request }) => {
-                const { auth } = await import("@/lib/auth");
-                return auth.handler(request);
+                try {
+                    const { auth } = await import("@/lib/auth");
+                    return await auth.handler(request);
+                } catch (e: any) {
+                    console.error("Auth POST error:", e);
+                    return new Response(JSON.stringify({ error: e.message, stack: e.stack }), { status: 500 });
+                }
             },
         }
     }
