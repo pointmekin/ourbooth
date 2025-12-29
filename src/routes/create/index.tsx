@@ -5,6 +5,7 @@ import { authClient } from '@/lib/auth-client'
 import { LayoutGrid, Upload, Smile, Wand2, LucideIcon, LogIn, LogOut } from 'lucide-react'
 import { deductCreditFn } from '@/server/export'
 import { toast } from "sonner"
+import { Button } from '@/components/ui/button'
 
 export const Route = createFileRoute('/create/')({
   component: PhotoboothEditor,
@@ -265,7 +266,7 @@ function PhotoboothEditor() {
                <button className="hidden md:block px-5 py-2 text-sm font-medium text-neutral-400 hover:text-white transition-colors">
                    Preview
                </button>
-               <button 
+               <Button 
                 type="button"
                 onClick={handleExport}
                 onTouchEnd={(e) => {
@@ -280,7 +281,7 @@ function PhotoboothEditor() {
                 }}
                >
                    {session ? `Export (1 Credit)` : 'Sign in'}
-               </button>
+               </Button>
             </div>
         </header>
 
