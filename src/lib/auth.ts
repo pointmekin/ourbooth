@@ -4,6 +4,8 @@ import { db } from "@/db"; // Adapting alias based on tsconfig
 import * as schema from "@/db/schema";
 
 export const auth = betterAuth({
+    secret: process.env.BETTER_AUTH_SECRET, // Access from your Worker's env object
+    baseURL: process.env.BETTER_AUTH_URL ?? undefined,
     database: drizzleAdapter(db, {
         provider: "pg",
         schema: schema,
