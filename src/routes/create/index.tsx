@@ -1,8 +1,9 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState, useRef } from 'react'
-import html2canvas from 'html2canvas'
+import { toPng } from 'html-to-image'
 import { authClient } from '@/lib/auth-client'
-import { LayoutGrid, Upload, Smile, Wand2, LucideIcon, LogIn, LogOut } from 'lucide-react'
+import { LayoutGrid, Upload, Smile, Wand2, LucideIcon, LogIn, LogOut, User } from 'lucide-react'
+import { deductCreditFn } from '@/server/export'
 
 export const Route = createFileRoute('/create/')({
   component: PhotoboothEditor,
@@ -62,6 +63,15 @@ function PhotoboothEditor() {
       setDraggingStickerId(null)
   }
 
+  const handleAuthAction = async () => {
+      if (session) {
+          await authClient.signOut()
+          window.location.reload()
+      } else {
+          navigate({ to: '/auth/signin' })
+      }
+  }
+
   const handleExport = async () => {
       if (!session) {
           alert("Please sign in to export your masterpiece!")
@@ -71,35 +81,58 @@ function PhotoboothEditor() {
 
       if (!stripRef.current) return
 
-      setIsExporting(true)
+      // @ts-ignore
+      const currentCredits = session.user.credits as number
       
+      const confirmExport = confirm(`Exporting will cost 1 Credit. You have ${currentCredits} credits. Proceed?`)
+      if (!confirmExport) return
+
+      setIsExporting(true)
+
+      // 1. Wait for UI to update (hide watermarks etc)
       setTimeout(async () => {
           try {
-              const canvas = await html2canvas(stripRef.current!, {
-                  scale: 3,
-                  useCORS: true,
-                  backgroundColor: null
+              // 2. Generate Image Blob FIRST using html-to-image
+              console.log("Generating image with html-to-image...")
+              const dataUrl = await toPng(stripRef.current!, {
+                  cacheBust: true,
+                  pixelRatio: 3, // High quality
+                  backgroundColor: '#ffffff'
+              }).catch(e => {
+                  throw new Error(`Image generation failed: ${e.message}`)
               })
-              
+
+              if (!dataUrl || dataUrl.length < 100) {
+                  throw new Error("Generated image is empty or invalid.")
+              }
+
+              // 3. Deduct Credit
+              console.log("Deducting credit...")
+              const result = await deductCreditFn().catch(e => {
+                  throw new Error(`Server deduction failed: ${e.message}`)
+              })
+
+              if (!result.success) {
+                  throw new Error("Credit deduction failed (Unknown error)")
+              }
+
+              // 4. Download (Only if both succeeded)
+              console.log("Downloading...")
               const link = document.createElement('a')
               link.download = `ourbooth-${Date.now()}.png`
-              link.href = canvas.toDataURL('image/png')
+              link.href = dataUrl
               link.click()
-          } catch (err) {
-              console.error("Export failed", err)
+              
+              authClient.getSession() // Refresh UI credits
+              alert(`Export successful! Remaining credits: ${result.remainingCredits}`)
+
+          } catch (err: any) {
+              console.error("Export Process Failed:", err)
+              alert(`Export Failed: ${err.message}`)
           } finally {
               setIsExporting(false)
           }
       }, 100)
-  }
-
-  const handleAuthAction = async () => {
-      if (session) {
-          await authClient.signOut()
-          window.location.reload()
-      } else {
-          navigate({ to: '/auth/signin' })
-      }
   }
 
   const currentLayout = LAYOUTS[selectedLayout]
@@ -166,19 +199,34 @@ function PhotoboothEditor() {
            {/* The Strip */}
             <div 
                 ref={stripRef}
-                className={`w-75 bg-white text-black shadow-2xl shadow-black ring-1 ring-white/10 transform transition-all duration-500 ${isExporting ? 'scale-100' : 'hover:scale-[1.01]'} flex flex-col relative group select-none`}
-                style={{ height: selectedLayout === '1x4' ? '800px' : '600px', width: selectedLayout === '1x4' ? '200px' : '400px' }}
+                className={`w-75 transform transition-all duration-500 ${isExporting ? 'scale-100' : 'hover:scale-[1.01]'} flex flex-col relative group select-none`}
+                style={{ 
+                    height: selectedLayout === '1x4' ? '800px' : '600px', 
+                    width: selectedLayout === '1x4' ? '200px' : '400px',
+                    backgroundColor: '#ffffff',
+                    color: '#000000',
+                    // Use standard box-shadow instead of tailwind shadow-2xl/ring
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', 
+                    border: '1px solid rgba(255, 255, 255, 0.1)'
+                }}
             >
-                {/* Watermark Overlay */}
+                {/* Watermark Overlay and Hover Glow - Remove from DOM during export */}
                 {!isExporting && (
-                    <div className="absolute inset-0 z-30 pointer-events-none opacity-30 flex items-center justify-center overflow-hidden">
-                        <div className="rotate-[-45deg] text-6xl font-bold text-black/10 whitespace-nowrap tracking-widest border-4 border-black/10 p-4">
-                            PREVIEW • OURBOOTH
+                    <>
+                        <div className="absolute inset-0 z-30 pointer-events-none opacity-30 flex items-center justify-center overflow-hidden">
+                            <div 
+                                className="rotate-[-45deg] text-6xl font-bold whitespace-nowrap tracking-widest p-4"
+                                style={{ 
+                                    color: 'rgba(0,0,0,0.1)', 
+                                    border: '4px solid rgba(0,0,0,0.1)' 
+                                }}
+                            >
+                                PREVIEW • OURBOOTH
+                            </div>
                         </div>
-                    </div>
+                        <div className="absolute -inset-4 rounded-xl border border-white/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                    </>
                 )}
-
-                <div className={`absolute -inset-4 rounded-xl border border-white/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none ${isExporting ? 'hidden' : ''}`} />
                 
                 {/* Photo Grid Placeholder */}
                 <div 
@@ -189,18 +237,27 @@ function PhotoboothEditor() {
                     }}
                 >
                     {Array.from({ length: currentLayout.count }).map((_, i) => (
-                        <div key={i} className="bg-neutral-100 w-full h-full relative overflow-hidden group/slot cursor-pointer hover:bg-neutral-200 transition-colors">
-                            <input 
-                                type="file" 
-                                accept="image/*" 
-                                className={`absolute inset-0 opacity-0 z-20 cursor-pointer ${isExporting ? 'hidden' : ''}`}
-                                onChange={(e) => e.target.files?.[0] && handleFileUpload(i, e.target.files[0])}
-                            />
+                        <div 
+                            key={i} 
+                            // Remove all layout/interactive classes during export if possible or keep only structural ones
+                            className={`w-full h-full relative overflow-hidden ${!isExporting ? 'group/slot cursor-pointer transition-colors' : ''}`}
+                            style={{ backgroundColor: images[i] ? 'transparent' : '#f5f5f5' }}
+                        >
+                            {/* Input - Remove from DOM during export */}
+                            {!isExporting && (
+                                <input 
+                                    type="file" 
+                                    accept="image/*" 
+                                    className="absolute inset-0 opacity-0 z-20 cursor-pointer"
+                                    onChange={(e) => e.target.files?.[0] && handleFileUpload(i, e.target.files[0])}
+                                />
+                            )}
+                            
                             {images[i] ? (
                                 <img src={images[i]!} alt={`Slot ${i}`} className="w-full h-full object-cover" />
                             ) : (
-                                <div className="absolute inset-0 flex items-center justify-center text-neutral-300 group-hover/slot:text-neutral-400 transition-colors">
-                                    <span className="text-4xl font-light">+</span>
+                                <div className={`absolute inset-0 flex items-center justify-center ${!isExporting ? 'group-hover/slot:text-neutral-400 transition-colors' : ''}`}>
+                                    <span className="text-4xl font-light" style={{ color: '#d4d4d4' }}>+</span>
                                 </div>
                             )}
                         </div>
@@ -211,12 +268,13 @@ function PhotoboothEditor() {
                         <div 
                             key={s.id} 
                             onMouseDown={(e) => handleStickerMouseDown(e, s.id)}
-                            className="absolute text-4xl cursor-move z-40 hover:scale-110 transition-transform drop-shadow-md select-none"
+                            className="absolute text-4xl z-40 drop-shadow-md select-none"
                             style={{ 
                                 left: `${s.x}%`, 
                                 top: `${s.y}%`,
                                 transform: 'translate(-50%, -50%)',
-                                cursor: draggingStickerId === s.id ? 'grabbing' : 'grab' 
+                                cursor: draggingStickerId === s.id ? 'grabbing' : 'grab',
+                                fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol' 
                             }}
                         >
                             {s.emoji}
@@ -225,8 +283,17 @@ function PhotoboothEditor() {
                 </div>
 
                 {/* Footer / Branding */}
-                <div className="h-16 flex items-center justify-center border-t border-neutral-100 relative z-10 bg-white">
-                    <span className="font-mono text-xs tracking-[0.2em] text-neutral-400 uppercase">
+                <div 
+                    className="h-16 flex items-center justify-center relative z-10"
+                    style={{ 
+                        borderTop: '1px solid #f5f5f5', 
+                        backgroundColor: '#ffffff'
+                    }}
+                >
+                    <span 
+                        className="font-mono text-xs tracking-[0.2em] uppercase"
+                        style={{ color: '#a3a3a3' }}
+                    >
                         OurBooth • 2025
                     </span>
                 </div>
