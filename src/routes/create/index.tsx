@@ -130,24 +130,49 @@ function PhotoboothEditor() {
       setIsExporting(true)
 
       // 1. Wait for UI to update (hide watermarks etc)
-      // Longer delay for mobile/safari to ensure DOM state is settled
-      await new Promise(resolve => setTimeout(resolve, 500))
+      await new Promise(resolve => setTimeout(resolve, 300))
 
       try {
           const node = stripRef.current
           
+          // Wait for all images to fully decode (critical for Safari)
+          const imgs = node.querySelectorAll('img')
+          await Promise.all(
+              Array.from(imgs).map(img => {
+                  if (img.complete) {
+                      return img.decode().catch(() => {})
+                  }
+                  return new Promise(resolve => {
+                      img.onload = () => img.decode().then(resolve).catch(resolve)
+                      img.onerror = resolve
+                  })
+              })
+          )
+          
+          // Additional settle time for Safari's rendering engine
+          await new Promise(resolve => setTimeout(resolve, 200))
+          
           console.log("Generating image with html-to-image...")
           
-          // Safari Workaround: Double capture
-          // First call warms up the cache and fixes common Safari blank image issues
-          await toPng(node, { cacheBust: true, pixelRatio: 1 }).catch(() => {})
-          
-          // Second call for the actual high-quality export
-          const dataUrl = await toPng(node, {
+          const exportOptions = {
               cacheBust: true,
-              pixelRatio: 2, // 2x is plenty for high quality and safer for iOS memory limits
+              pixelRatio: 2,
               backgroundColor: '#ffffff',
-          }).catch(e => {
+              // Force canvas filter to ensure proper rendering
+              canvasFilter: 'none',
+              // Skip fonts to avoid CORS issues on Safari
+              skipFonts: true,
+          }
+          
+          // Safari Workaround: Double capture with identical settings
+          // First call warms up the cache and fixes Safari blank image issues
+          await toPng(node, exportOptions).catch(() => {})
+          
+          // Small delay between captures
+          await new Promise(resolve => setTimeout(resolve, 100))
+          
+          // Second call for the actual export
+          const dataUrl = await toPng(node, exportOptions).catch(e => {
               throw new Error(`Image generation failed: ${e.message}`)
           })
 
@@ -320,8 +345,7 @@ function PhotoboothEditor() {
                                 <img 
                                     src={images[i]!} 
                                     alt={`Slot ${i}`} 
-                                    className="w-full h-full object-cover" 
-                                    crossOrigin="anonymous" 
+                                    className="w-full h-full object-cover"
                                 />
                             ) : (
                                 <div className={`absolute inset-0 flex items-center justify-center ${!isExporting ? 'group-hover/slot:text-neutral-400 transition-colors' : ''}`}>
