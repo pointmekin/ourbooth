@@ -1,6 +1,6 @@
-import postgresPlugin from 'vite-plugin-db'
+import * as postgresPlugin from 'vite-plugin-db'
 
-export default postgresPlugin({
+export default postgresPlugin.postgres({
   seed: {
     type: 'sql-script',
     path: 'db/init.sql',
