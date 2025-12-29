@@ -266,9 +266,18 @@ function PhotoboothEditor() {
                    Preview
                </button>
                <button 
+                type="button"
                 onClick={handleExport}
-                className="px-4 md:px-6 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs md:text-sm font-semibold rounded-full shadow-[0_0_20px_-5px_rgba(225,29,72,0.6)] transition-all touch-manipulation"
-                style={{ WebkitTapHighlightColor: 'transparent' }}
+                onTouchEnd={(e) => {
+                    e.stopPropagation()
+                    e.preventDefault()
+                    handleExport()
+                }}
+                className="px-4 md:px-6 py-2 bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white text-xs md:text-sm font-semibold rounded-full shadow-[0_0_20px_-5px_rgba(225,29,72,0.6)] transition-all cursor-pointer"
+                style={{ 
+                    WebkitTapHighlightColor: 'transparent',
+                    touchAction: 'manipulation'
+                }}
                >
                    {session ? `Export (1 Credit)` : 'Sign in'}
                </button>
