@@ -257,7 +257,7 @@ function PhotoboothEditor() {
       {/* MAIN CANVAS AREA */}
       <main className="flex-1 flex flex-col relative overflow-hidden">
         {/* Header */}
-        <header className="h-16 border-b border-white/5 flex items-center justify-between px-4 md:px-8 bg-neutral-950/80 backdrop-blur-md z-10 cursor-default">
+        <header className="h-16 border-b border-white/5 flex items-center justify-between px-4 md:px-8 bg-neutral-950/80 backdrop-blur-md z-50 cursor-default">
             <h1 className="text-xl font-bold tracking-tighter bg-linear-to-br from-white to-white/50 bg-clip-text text-transparent">
                 OURBOOTH
             </h1>
@@ -267,7 +267,8 @@ function PhotoboothEditor() {
                </button>
                <button 
                 onClick={handleExport}
-                className="px-4 md:px-6 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs md:text-sm font-semibold rounded-full shadow-[0_0_20px_-5px_rgba(225,29,72,0.6)] transition-all"
+                className="px-4 md:px-6 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs md:text-sm font-semibold rounded-full shadow-[0_0_20px_-5px_rgba(225,29,72,0.6)] transition-all touch-manipulation"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
                >
                    {session ? `Export (1 Credit)` : 'Sign in'}
                </button>
