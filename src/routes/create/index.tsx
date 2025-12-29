@@ -269,9 +269,9 @@ function PhotoboothEditor() {
                 type="button"
                 onClick={handleExport}
                 onTouchEnd={(e) => {
+                    // Only stop propagation to prevent parent handlers
+                    // Don't preventDefault - it blocks onClick in Brave
                     e.stopPropagation()
-                    e.preventDefault()
-                    handleExport()
                 }}
                 className="px-4 md:px-6 py-2 bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white text-xs md:text-sm font-semibold rounded-full shadow-[0_0_20px_-5px_rgba(225,29,72,0.6)] transition-all cursor-pointer"
                 style={{ 
