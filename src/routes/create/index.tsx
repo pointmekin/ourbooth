@@ -1,11 +1,12 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { toPng } from 'html-to-image'
 import { authClient } from '@/lib/auth-client'
-import { LayoutGrid, Upload, Smile, Wand2, LucideIcon, LogIn, LogOut } from 'lucide-react'
+import { LayoutGrid, Upload, Smile, Wand2, LucideIcon, LogIn, LogOut, Camera, Timer, RefreshCcw, Check, X, FileImage, Film } from 'lucide-react'
 import { deductCreditFn } from '@/server/export'
 import { toast } from "sonner"
 import { Button } from '@/components/ui/button'
+import { generateGif } from '@/lib/gif-generator'
 
 export const Route = createFileRoute('/create/')({
   component: PhotoboothEditor,
@@ -24,6 +25,16 @@ function PhotoboothEditor() {
   const [draggingStickerId, setDraggingStickerId] = useState<number | null>(null)
   const [isExporting, setIsExporting] = useState(false)
   const [isPropertiesOpen, setIsPropertiesOpen] = useState(false) // Mobile drawer state
+  const [captureMode, setCaptureMode] = useState<'upload' | 'camera'>('upload')
+  const [sessionState, setSessionState] = useState<'idle' | 'countdown' | 'capturing' | 'reviewing'>('idle')
+  const [countdown, setCountdown] = useState<number>(0)
+  const [capturedPhotos, setCapturedPhotos] = useState<string[]>([])
+  const [selectedPhotos, setSelectedPhotos] = useState<Set<number>>(new Set())
+  const [exportType, setExportType] = useState<'png' | 'gif'>('png')
+
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const streamRef = useRef<MediaStream | null>(null)
   const stripRef = useRef<HTMLDivElement>(null)
   
   const { data: session } = authClient.useSession()
@@ -37,6 +48,142 @@ function PhotoboothEditor() {
         setImages(newImages)
     }
     reader.readAsDataURL(file)
+  }
+
+  // Camera Logic
+  const startCamera = async () => {
+    if (streamRef.current && streamRef.current.active) {
+        if (videoRef.current && videoRef.current.srcObject !== streamRef.current) {
+            videoRef.current.srcObject = streamRef.current
+        }
+        return
+    }
+
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
+                facingMode: 'user',
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            }
+        })
+        streamRef.current = stream
+        if (videoRef.current) {
+            videoRef.current.srcObject = stream
+        }
+    } catch (err) {
+        console.error("Camera error:", err)
+        toast.error("Could not access camera. Please check permissions.")
+        setCaptureMode('upload')
+    }
+  }
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop())
+        streamRef.current = null
+    }
+    if (videoRef.current) {
+        videoRef.current.srcObject = null
+    }
+  }
+
+  useEffect(() => {
+    // Keep camera active throughout the capture process (idle, countdown, capturing)
+    if (captureMode === 'camera' && sessionState !== 'reviewing') {
+        startCamera()
+    } else {
+        stopCamera()
+    }
+    
+    return () => {
+        // Only stop camera if we're actually leaving camera mode or have finished
+        // We avoid stopping on every countdown tick/state change
+    }
+  }, [captureMode, sessionState])
+
+  const captureFrame = () => {
+    const video = videoRef.current
+    const canvas = canvasRef.current
+    if (!video || !canvas) return null
+    
+    canvas.width = video.videoWidth
+    canvas.height = video.videoHeight
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return null
+
+    // Mirror if using front camera
+    ctx.translate(canvas.width, 0)
+    ctx.scale(-1, 1)
+    ctx.drawImage(video, 0, 0)
+    
+    return canvas.toDataURL('image/jpeg', 0.9)
+  }
+
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
+  const startSession = async () => {
+    if (!session) {
+        toast.error("Please sign in to use the photobooth!")
+        navigate({ to: '/auth/signin' })
+        return
+    }
+
+    setCapturedPhotos([])
+    setSessionState('countdown')
+    
+    for (let shot = 0; shot < 4; shot++) {
+        // Countdown
+        for (let i = 3; i > 0; i--) {
+            setCountdown(i)
+            await delay(1000)
+        }
+        
+        setSessionState('capturing')
+        const photo = captureFrame()
+        if (photo) {
+            setCapturedPhotos(prev => [...prev, photo])
+        }
+        
+        // Flash effect
+        await delay(200)
+        if (shot < 3) {
+            setSessionState('countdown')
+        }
+    }
+    
+    setSessionState('reviewing')
+    stopCamera()
+  }
+
+  const handleUsePhotos = () => {
+    const selected = capturedPhotos.filter((_, i) => selectedPhotos.has(i))
+    if (selected.length === 0) {
+        toast.error("Select at least one photo!")
+        return
+    }
+
+    const newImages = [...images]
+    selected.slice(0, 4).forEach((photo, i) => {
+        newImages[i] = photo
+    })
+    setImages(newImages)
+    setSessionState('idle')
+    setCaptureMode('upload') // Switch back after populating
+  }
+
+  const togglePhotoSelection = (index: number) => {
+    const newSelected = new Set(selectedPhotos)
+    if (newSelected.has(index)) {
+        newSelected.delete(index)
+    } else {
+        if (newSelected.size < 4) {
+            newSelected.add(index)
+        } else {
+            toast.error("Maximum 4 photos allowed")
+        }
+    }
+    setSelectedPhotos(newSelected)
   }
 
   const addSticker = (emoji: string, x = 50, y = 50) => {
@@ -120,7 +267,7 @@ function PhotoboothEditor() {
           return
       }
 
-      if (!stripRef.current) return
+      if (!stripRef.current && exportType === 'png') return
 
       // @ts-ignore
       const currentCredits = session.user.credits as number
@@ -130,55 +277,69 @@ function PhotoboothEditor() {
 
       setIsExporting(true)
 
-      // 1. Wait for UI to update (hide watermarks etc)
-      await new Promise(resolve => setTimeout(resolve, 300))
-
       try {
-          const node = stripRef.current
-          
-          // Wait for all images to fully decode (critical for Safari)
-          const imgs = node.querySelectorAll('img')
-          await Promise.all(
-              Array.from(imgs).map(img => {
-                  if (img.complete) {
-                      return img.decode().catch(() => {})
-                  }
-                  return new Promise(resolve => {
-                      img.onload = () => img.decode().then(resolve).catch(resolve)
-                      img.onerror = resolve
-                  })
-              })
-          )
-          
-          // Additional settle time for Safari's rendering engine
-          await new Promise(resolve => setTimeout(resolve, 200))
-          
-          console.log("Generating image with html-to-image...")
-          
-          const exportOptions = {
-              cacheBust: true,
-              pixelRatio: 2,
-              backgroundColor: '#ffffff',
-              // Force canvas filter to ensure proper rendering
-              canvasFilter: 'none',
-              // Skip fonts to avoid CORS issues on Safari
-              skipFonts: true,
-          }
-          
-          // Safari Workaround: Double capture with identical settings
-          // First call warms up the cache and fixes Safari blank image issues
-          await toPng(node, exportOptions).catch(() => {})
-          
-          // Small delay between captures
-          await new Promise(resolve => setTimeout(resolve, 100))
-          
-          // Second call for the actual export
-          const dataUrl = await toPng(node, exportOptions).catch(e => {
-              throw new Error(`Image generation failed: ${e.message}`)
-          })
+          let dataUrlOrBlob: string | Blob
+          let filename: string
 
-          if (!dataUrl || dataUrl.length < 100) {
-              throw new Error("Generated image is empty or invalid.")
+          if (exportType === 'gif') {
+              console.log("Generating GIF...")
+              const validImages = images.filter(Boolean) as string[]
+              if (validImages.length === 0) {
+                  throw new Error("No images to generate GIF. Please add some photos!")
+              }
+              
+              dataUrlOrBlob = await generateGif(validImages, {
+                  width: selectedLayout === '1x4' ? 200 : 400,
+                  height: selectedLayout === '1x4' ? 800 : 600,
+                  delay: 500
+              })
+              filename = `ourbooth-${Date.now()}.gif`
+          } else {
+              // Existing PNG Logic
+              if (!stripRef.current) throw new Error("Canvas not found")
+              
+              // 1. Wait for UI to update (hide watermarks etc)
+              await new Promise(resolve => setTimeout(resolve, 300))
+
+              const node = stripRef.current
+              
+              // Wait for all images to fully decode
+              const imgs = node.querySelectorAll('img')
+              await Promise.all(
+                  Array.from(imgs).map(img => {
+                      if (img.complete) {
+                          return img.decode().catch(() => {})
+                      }
+                      return new Promise(resolve => {
+                          img.onload = () => img.decode().then(resolve).catch(resolve)
+                          img.onerror = resolve
+                      })
+                  })
+              )
+              
+              await new Promise(resolve => setTimeout(resolve, 200))
+              
+              const exportOptions = {
+                  cacheBust: true,
+                  pixelRatio: 2,
+                  backgroundColor: '#ffffff',
+                  canvasFilter: 'none',
+                  skipFonts: true,
+              }
+              
+              await toPng(node, exportOptions).catch(() => {})
+              await new Promise(resolve => setTimeout(resolve, 100))
+              
+              const dataUrl = await toPng(node, exportOptions).catch(e => {
+                  throw new Error(`Image generation failed: ${e.message}`)
+              })
+
+              if (!dataUrl || dataUrl.length < 100) {
+                  throw new Error("Generated image is empty or invalid.")
+              }
+              
+              dataUrlOrBlob = dataUrl
+              filename = `ourbooth-${Date.now()}.png`
           }
 
           // 2. Deduct Credit
@@ -194,11 +355,12 @@ function PhotoboothEditor() {
           // 3. Download
           console.log("Downloading...")
           const link = document.createElement('a')
-          link.download = `ourbooth-${Date.now()}.png`
-          link.href = dataUrl
+          link.download = filename
+          link.href = typeof dataUrlOrBlob === 'string' ? dataUrlOrBlob : URL.createObjectURL(dataUrlOrBlob)
           document.body.appendChild(link)
           link.click()
           document.body.removeChild(link)
+          if (typeof dataUrlOrBlob !== 'string') URL.revokeObjectURL(link.href)
           
           authClient.getSession() // Refresh UI credits
           toast.success("Export successful!")
@@ -227,7 +389,24 @@ function PhotoboothEditor() {
         <ToolIcon label="Menu" icon={LayoutGrid} active={isPropertiesOpen} onClick={() => setIsPropertiesOpen(!isPropertiesOpen)} />
         {/* Only show other icons if space permits or for specific actions */}
         <div className="hidden md:flex space-y-6 w-full flex-col items-center">
-            <ToolIcon label="Upload" icon={Upload} />
+            <ToolIcon 
+                label="Upload Mode" 
+                icon={Upload} 
+                active={captureMode === 'upload'} 
+                onClick={() => {
+                    setCaptureMode('upload')
+                    setSessionState('idle')
+                }} 
+            />
+            <ToolIcon 
+                label="Camera Mode" 
+                icon={Camera} 
+                active={captureMode === 'camera'} 
+                onClick={() => {
+                    setCaptureMode('camera')
+                    setSessionState('idle')
+                }} 
+            />
             <ToolIcon label="Stickers" icon={Smile} />
             <ToolIcon label="Filters" icon={Wand2} />
         </div>
@@ -266,146 +445,279 @@ function PhotoboothEditor() {
                <button className="hidden md:block px-5 py-2 text-sm font-medium text-neutral-400 hover:text-white transition-colors">
                    Preview
                </button>
+                <div className="flex bg-neutral-900 rounded-full p-1 border border-white/10">
+                    <button 
+                        onClick={() => setExportType('png')}
+                        className={`px-3 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${exportType === 'png' ? 'bg-white text-black' : 'text-neutral-500 hover:text-white'}`}
+                    >
+                        <FileImage className="w-3 h-3" />
+                        PNG
+                    </button>
+                    <button 
+                        onClick={() => setExportType('gif')}
+                        className={`px-3 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${exportType === 'gif' ? 'bg-white text-black' : 'text-neutral-500 hover:text-white'}`}
+                    >
+                        <Film className="w-3 h-3" />
+                        GIF
+                    </button>
+                </div>
                <Button 
                 type="button"
                 onClick={handleExport}
+                disabled={isExporting}
                 onTouchEnd={(e) => {
-                    // Only stop propagation to prevent parent handlers
-                    // Don't preventDefault - it blocks onClick in Brave
                     e.stopPropagation()
                 }}
-                className="px-4 md:px-6 py-2 bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white text-xs md:text-sm font-semibold rounded-full shadow-[0_0_20px_-5px_rgba(225,29,72,0.6)] transition-all cursor-pointer"
+                className="px-4 md:px-6 py-2 bg-rose-600 hover:bg-rose-500 active:bg-rose-700 disabled:bg-rose-900 disabled:opacity-50 text-white text-xs md:text-sm font-semibold rounded-full shadow-[0_0_20px_-5px_rgba(225,29,72,0.6)] transition-all cursor-pointer flex items-center gap-2"
                 style={{ 
                     WebkitTapHighlightColor: 'transparent',
                     touchAction: 'manipulation'
                 }}
                >
-                   {session ? `Export (1 Credit)` : 'Sign in'}
+                   {isExporting ? (
+                       <>
+                           <RefreshCcw className="w-4 h-4 animate-spin" />
+                           Exporting...
+                       </>
+                   ) : (
+                       session ? `Export ${exportType.toUpperCase()} (1 Credit)` : 'Sign in'
+                   )}
                </Button>
             </div>
         </header>
 
         {/* Workspace */}
         <div className="flex-1 flex items-center justify-center p-4 md:p-10 bg-[radial-gradient(ellipse_at_center,var(--tw-gradient-stops))] from-neutral-900 via-neutral-950 to-neutral-950 overflow-auto">
-           {/* Scaling Wrapper: Moving transform here so stripRef itself is not transformed during capture */}
-           <div 
-               className="flex items-center justify-center transition-transform duration-500"
-               style={{ 
-                   transform: `scale(${typeof window !== 'undefined' && window.innerWidth < 768 ? (selectedLayout === '1x4' ? 0.5 : 0.6) : 1})`,
-                   transformOrigin: 'center'
-               }}
-           >
-                <div 
-                    ref={stripRef}
-                    className="flex flex-col relative group select-none shadow-2xl"
-                    style={{ 
-                        height: selectedLayout === '1x4' ? '800px' : '600px', 
-                        width: selectedLayout === '1x4' ? '200px' : '400px',
-                        backgroundColor: '#ffffff',
-                        color: '#000000',
-                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', 
-                        border: '1px solid rgba(255, 255, 255, 0.1)'
-                    }}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={handleDropIntoCanvas}
-                >
-                {/* Watermark Overlay and Hover Glow - Remove from DOM during export */}
-                {!isExporting && (
-                    <>
-                        <div className="absolute inset-0 z-30 pointer-events-none opacity-30 flex items-center justify-center overflow-hidden">
-                            <div 
-                                className="-rotate-45 text-6xl font-bold whitespace-nowrap tracking-widest p-4"
-                                style={{ 
-                                    color: 'rgba(0,0,0,0.1)', 
-                                    border: '4px solid rgba(0,0,0,0.1)' 
-                                }}
+            {captureMode === 'camera' && sessionState !== 'reviewing' ? (
+                <div className="relative w-full max-w-2xl aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl border border-white/10 group">
+                    <video 
+                        ref={videoRef} 
+                        autoPlay 
+                        playsInline 
+                        muted 
+                        className="w-full h-full object-cover scale-x-[-1]"
+                    />
+                    
+                    {/* Visual Overlays */}
+                    {sessionState === 'idle' && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm group-hover:bg-black/20 transition-all">
+                            <Button 
+                                onClick={startSession}
+                                className="px-8 py-4 bg-rose-600 hover:bg-rose-500 text-white rounded-full font-bold text-lg shadow-xl hover:scale-105 transition-all flex items-center gap-2"
                             >
-                                PREVIEW • OURBOOTH
+                                <Timer className="w-6 h-6" />
+                                Start Session
+                            </Button>
+                        </div>
+                    )}
+
+                    {sessionState === 'countdown' && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                            <div className="text-[12rem] font-black text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.5)] animate-in zoom-in duration-300">
+                                {countdown}
                             </div>
                         </div>
-                        <div className="absolute -inset-4 rounded-xl border border-white/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                    </>
-                )}
-                
-                {/* Photo Grid Placeholder */}
-                <div 
-                    className="flex-1 min-h-0 grid gap-2.5 p-4 box-border relative z-0"
-                    style={{ 
-                        gridTemplateColumns: `repeat(${currentLayout.cols}, minmax(0, 1fr))`,
-                        gridTemplateRows: `repeat(${currentLayout.rows}, minmax(0, 1fr))`
-                    }}
-                >
-                    {Array.from({ length: currentLayout.count }).map((_, i) => (
-                        <div 
-                            key={i} 
-                            // Remove all layout/interactive classes during export if possible or keep only structural ones
-                            className={`w-full h-full relative overflow-hidden ${!isExporting ? 'group/slot cursor-pointer transition-colors' : ''}`}
-                            style={{ backgroundColor: images[i] ? 'transparent' : '#f5f5f5' }}
-                        >
-                            {/* Input - Remove from DOM during export */}
-                            {!isExporting && (
-                                <input 
-                                    type="file" 
-                                    accept="image/*" 
-                                    className="absolute inset-0 opacity-0 z-20 cursor-pointer"
-                                    onChange={(e) => e.target.files?.[0] && handleFileUpload(i, e.target.files[0])}
-                                />
-                            )}
-                            
-                            {images[i] ? (
-                                <img 
-                                    src={images[i]!} 
-                                    alt={`Slot ${i}`} 
-                                    className="w-full h-full object-cover"
-                                />
-                            ) : (
-                                <div className={`absolute inset-0 flex items-center justify-center ${!isExporting ? 'group-hover/slot:text-neutral-400 transition-colors' : ''}`}>
-                                    <span className="text-4xl font-light" style={{ color: '#d4d4d4' }}>+</span>
-                                </div>
-                            )}
-                        </div>
-                    ))}
-                    
-                    {/* Stickers Layer */}
-                     {stickers.map(s => (
-                        <div 
-                            key={s.id} 
-                            onMouseDown={(e) => handleDragStart(e, s.id)}
-                            onTouchStart={(e) => {
-                                // Touch start works slightly differently, we need to stop prop here too
-                                handleDragStart(e, s.id)
-                            }}
-                            className="absolute text-4xl z-40 drop-shadow-md select-none touch-none" // touch-none is critical
-                            style={{ 
-                                left: `${s.x}%`, 
-                                top: `${s.y}%`,
-                                transform: 'translate(-50%, -50%)',
-                                cursor: draggingStickerId === s.id ? 'grabbing' : 'grab',
-                                fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol' 
-                            }}
-                        >
-                            {s.emoji}
-                        </div>
-                    ))}
-                </div>
+                    )}
 
-                {/* Footer / Branding */}
+                    {sessionState === 'capturing' && (
+                        <div className="absolute inset-0 bg-white animate-out fade-out duration-200" />
+                    )}
+
+                    {/* Info Overlay */}
+                    <div className="absolute bottom-6 left-6 right-6 flex justify-between items-end">
+                        <div className="bg-black/60 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 flex items-center gap-3">
+                            <div className="flex gap-1">
+                                {[0,1,2,3].map(i => (
+                                    <div 
+                                        key={i} 
+                                        className={`w-2 h-2 rounded-full transition-colors ${i < capturedPhotos.length ? 'bg-rose-500' : 'bg-white/20'}`} 
+                                    />
+                                ))}
+                            </div>
+                            <span className="text-xs font-bold uppercase tracking-wider text-white/80">
+                                {capturedPhotos.length} / 4 Photos
+                            </span>
+                        </div>
+                        
+                        {sessionState !== 'idle' && (
+                            <button 
+                                onClick={() => {
+                                    stopCamera()
+                                    setSessionState('idle')
+                                }}
+                                className="p-3 bg-black/60 backdrop-blur-md rounded-full border border-white/10 text-white/60 hover:text-white transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        )}
+                    </div>
+                </div>
+            ) : captureMode === 'camera' && sessionState === 'reviewing' ? (
+                <div className="w-full max-w-4xl bg-neutral-900/50 backdrop-blur-3xl p-8 rounded-3xl border border-white/10 shadow-3xl animate-in fade-in slide-in-from-bottom-5">
+                    <div className="flex items-center justify-between mb-8">
+                        <div>
+                            <h2 className="text-2xl font-bold text-white mb-1">Session Compete!</h2>
+                            <p className="text-neutral-400 text-sm">Select the best 4 photos to add to your strip.</p>
+                        </div>
+                        <div className="flex gap-3">
+                            <Button 
+                                variant="outline" 
+                                onClick={() => {
+                                    setSessionState('idle')
+                                    startCamera()
+                                }}
+                                className="rounded-full border-white/10 hover:bg-white/5 text-white"
+                            >
+                                <RefreshCcw className="w-4 h-4 mr-2" />
+                                Retake
+                            </Button>
+                            <Button 
+                                onClick={handleUsePhotos}
+                                disabled={selectedPhotos.size === 0}
+                                className="bg-rose-600 hover:bg-rose-500 text-white rounded-full font-bold px-6"
+                            >
+                                <Check className="w-4 h-4 mr-2" />
+                                Use Selected ({selectedPhotos.size}/4)
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        {capturedPhotos.map((photo, i) => (
+                            <div 
+                                key={i}
+                                onClick={() => togglePhotoSelection(i)}
+                                className={`relative aspect-square rounded-2xl overflow-hidden cursor-pointer transition-all border-2 ${selectedPhotos.has(i) ? 'border-rose-500 scale-[0.98] shadow-[0_0_20px_rgba(225,29,72,0.3)]' : 'border-transparent hover:border-white/20'}`}
+                            >
+                                <img src={photo} alt={`Captured ${i}`} className="w-full h-full object-cover" />
+                                {selectedPhotos.has(i) && (
+                                    <div className="absolute inset-0 bg-rose-500/10 flex items-center justify-center">
+                                        <div className="bg-rose-500 text-white p-2 rounded-full shadow-lg">
+                                            <Check className="w-6 h-6" />
+                                        </div>
+                                    </div>
+                                )}
+                                <div className="absolute top-3 left-3 w-6 h-6 bg-black/50 backdrop-blur-md rounded-full flex items-center justify-center text-[10px] font-bold text-white border border-white/20">
+                                    {i + 1}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            ) : (
+                /* Static Strip View (Existing) */
                 <div 
-                    className="h-16 flex items-center justify-center relative z-10"
+                    className="flex items-center justify-center transition-transform duration-500"
                     style={{ 
-                        borderTop: '1px solid #f5f5f5', 
-                        backgroundColor: '#ffffff'
+                        transform: `scale(${typeof window !== 'undefined' && window.innerWidth < 768 ? (selectedLayout === '1x4' ? 0.5 : 0.6) : 1})`,
+                        transformOrigin: 'center'
                     }}
                 >
-                    <span 
-                        className="font-mono text-xs tracking-[0.2em] uppercase"
-                        style={{ color: '#a3a3a3' }}
+                    <div 
+                        ref={stripRef}
+                        className="flex flex-col relative group select-none shadow-2xl"
+                        style={{ 
+                            height: selectedLayout === '1x4' ? '800px' : '600px', 
+                            width: selectedLayout === '1x4' ? '200px' : '400px',
+                            backgroundColor: '#ffffff',
+                            color: '#000000',
+                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', 
+                            border: '1px solid rgba(255, 255, 255, 0.1)'
+                        }}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={handleDropIntoCanvas}
                     >
-                        OurBooth • 2025
-                    </span>
+                        {!isExporting && (
+                            <>
+                                <div className="absolute inset-0 z-30 pointer-events-none opacity-30 flex items-center justify-center overflow-hidden">
+                                    <div 
+                                        className="-rotate-45 text-6xl font-bold whitespace-nowrap tracking-widest p-4"
+                                        style={{ 
+                                            color: 'rgba(0,0,0,0.1)', 
+                                            border: '4px solid rgba(0,0,0,0.1)' 
+                                        }}
+                                    >
+                                        PREVIEW • OURBOOTH
+                                    </div>
+                                </div>
+                                <div className="absolute -inset-4 rounded-xl border border-white/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                            </>
+                        )}
+                        
+                        <div 
+                            className="flex-1 min-h-0 grid gap-2.5 p-4 box-border relative z-0"
+                            style={{ 
+                                gridTemplateColumns: `repeat(${currentLayout.cols}, minmax(0, 1fr))`,
+                                gridTemplateRows: `repeat(${currentLayout.rows}, minmax(0, 1fr))`
+                            }}
+                        >
+                            {Array.from({ length: currentLayout.count }).map((_, i) => (
+                                <div 
+                                    key={i} 
+                                    className={`w-full h-full relative overflow-hidden ${!isExporting ? 'group/slot cursor-pointer transition-colors' : ''}`}
+                                    style={{ backgroundColor: images[i] ? 'transparent' : '#f5f5f5' }}
+                                >
+                                    {!isExporting && (
+                                        <input 
+                                            type="file" 
+                                            accept="image/*" 
+                                            className="absolute inset-0 opacity-0 z-20 cursor-pointer"
+                                            onChange={(e) => e.target.files?.[0] && handleFileUpload(i, e.target.files[0])}
+                                        />
+                                    )}
+                                    
+                                    {images[i] ? (
+                                        <img 
+                                            src={images[i]!} 
+                                            alt={`Slot ${i}`} 
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className={`absolute inset-0 flex items-center justify-center ${!isExporting ? 'group-hover/slot:text-neutral-400 transition-colors' : ''}`}>
+                                            <span className="text-4xl font-light" style={{ color: '#d4d4d4' }}>+</span>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                            
+                            {stickers.map(s => (
+                                <div 
+                                    key={s.id} 
+                                    onMouseDown={(e) => handleDragStart(e, s.id)}
+                                    onTouchStart={(e) => handleDragStart(e, s.id)}
+                                    className="absolute text-4xl z-40 drop-shadow-md select-none touch-none"
+                                    style={{ 
+                                        left: `${s.x}%`, 
+                                        top: `${s.y}%`,
+                                        transform: 'translate(-50%, -50%)',
+                                        cursor: draggingStickerId === s.id ? 'grabbing' : 'grab',
+                                        fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol' 
+                                    }}
+                                >
+                                    {s.emoji}
+                                </div>
+                            ))}
+                        </div>
+
+                        <div 
+                            className="h-16 flex items-center justify-center relative z-10"
+                            style={{ 
+                                borderTop: '1px solid #f5f5f5', 
+                                backgroundColor: '#ffffff'
+                            }}
+                        >
+                            <span 
+                                className="font-mono text-xs tracking-[0.2em] uppercase"
+                                style={{ color: '#a3a3a3' }}
+                            >
+                                OurBooth • 2025
+                            </span>
+                        </div>
+                    </div>
                 </div>
-            </div>
-          </div>
+            )}
+            {/* Helper canvas for capture (hidden) */}
+            <canvas ref={canvasRef} className="hidden" />
         </div>
       </main>
 
