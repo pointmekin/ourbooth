@@ -377,18 +377,17 @@ function PhotoboothEditor() {
 
   return (
     <div 
-        className="min-h-screen bg-neutral-950 text-neutral-100 font-sans selection:bg-rose-500/30 flex overflow-hidden fixed inset-0" // fixed inset-0 prevents body scroll
+        className="h-dvh bg-neutral-950 text-neutral-100 font-sans selection:bg-rose-500/30 flex overflow-hidden"
         onMouseMove={handleMouseMove}
         onMouseUp={handleDragEnd}
         onMouseLeave={handleDragEnd}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleDragEnd}
     >
-      {/* LEFT SIDEBAR - TOOLS */}
-      <aside className="w-20 border-r border-white/5 flex flex-col items-center py-6 gap-6 z-30 bg-neutral-950/80 backdrop-blur-xl">
+      {/* LEFT SIDEBAR - TOOLS (Desktop Only) */}
+      <aside className="hidden md:flex w-20 border-r border-white/5 flex-col items-center py-6 gap-6 z-30 bg-neutral-950/80 backdrop-blur-xl">
         <ToolIcon label="Menu" icon={LayoutGrid} active={isPropertiesOpen} onClick={() => setIsPropertiesOpen(!isPropertiesOpen)} />
-        {/* Only show other icons if space permits or for specific actions */}
-        <div className="hidden md:flex space-y-6 w-full flex-col items-center">
+        <div className="flex space-y-6 w-full flex-col items-center">
             <ToolIcon 
                 label="Upload Mode" 
                 icon={Upload} 
@@ -487,9 +486,9 @@ function PhotoboothEditor() {
         </header>
 
         {/* Workspace */}
-        <div className="flex-1 flex items-center justify-center p-4 md:p-10 bg-[radial-gradient(ellipse_at_center,var(--tw-gradient-stops))] from-neutral-900 via-neutral-950 to-neutral-950 overflow-auto">
+        <div className="flex-1 flex items-center justify-center p-4 md:p-10 pb-20 md:pb-10 bg-[radial-gradient(ellipse_at_center,var(--tw-gradient-stops))] from-neutral-900 via-neutral-950 to-neutral-950 overflow-auto">
             {captureMode === 'camera' && sessionState !== 'reviewing' ? (
-                <div className="relative w-full max-w-2xl aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl border border-white/10 group">
+                <div className="relative w-full max-w-2xl max-h-[50dvh] md:max-h-none aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl border border-white/10 group">
                     <video 
                         ref={videoRef} 
                         autoPlay 
@@ -553,13 +552,13 @@ function PhotoboothEditor() {
                     </div>
                 </div>
             ) : captureMode === 'camera' && sessionState === 'reviewing' ? (
-                <div className="w-full max-w-4xl bg-neutral-900/50 backdrop-blur-3xl p-8 rounded-3xl border border-white/10 shadow-3xl animate-in fade-in slide-in-from-bottom-5">
-                    <div className="flex items-center justify-between mb-8">
+                <div className="w-full max-w-4xl bg-neutral-900/50 backdrop-blur-3xl p-4 md:p-8 rounded-3xl border border-white/10 shadow-3xl animate-in fade-in slide-in-from-bottom-5">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
                         <div>
                             <h2 className="text-2xl font-bold text-white mb-1">Session Compete!</h2>
                             <p className="text-neutral-400 text-sm">Select the best 4 photos to add to your strip.</p>
                         </div>
-                        <div className="flex gap-3">
+                        <div className="flex gap-2 w-full md:w-auto">
                             <Button 
                                 variant="outline" 
                                 onClick={() => {
@@ -606,19 +605,12 @@ function PhotoboothEditor() {
                 </div>
             ) : (
                 /* Static Strip View (Existing) */
-                <div 
-                    className="flex items-center justify-center transition-transform duration-500"
-                    style={{ 
-                        transform: `scale(${typeof window !== 'undefined' && window.innerWidth < 768 ? (selectedLayout === '1x4' ? 0.5 : 0.6) : 1})`,
-                        transformOrigin: 'center'
-                    }}
-                >
+                <div className="flex items-center justify-center w-full h-full">
                     <div 
                         ref={stripRef}
-                        className="flex flex-col relative group select-none shadow-2xl"
+                        className="flex flex-col relative group select-none shadow-2xl h-full max-h-[calc(100dvh-12rem)] md:max-h-[calc(100dvh-10rem)]"
                         style={{ 
-                            height: selectedLayout === '1x4' ? '800px' : '600px', 
-                            width: selectedLayout === '1x4' ? '200px' : '400px',
+                            aspectRatio: selectedLayout === '1x4' ? '1/4' : '2/3',
                             backgroundColor: '#ffffff',
                             color: '#000000',
                             boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', 
@@ -779,6 +771,34 @@ function PhotoboothEditor() {
              </div>
         </div>
       </aside>
+
+      {/* MOBILE BOTTOM TOOLBAR */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-neutral-950/95 backdrop-blur-xl border-t border-white/10 flex justify-around py-3 px-4 safe-area-inset-bottom">
+          <ToolIcon 
+              label="Upload" 
+              icon={Upload} 
+              active={captureMode === 'upload'} 
+              onClick={() => {
+                  setCaptureMode('upload')
+                  setSessionState('idle')
+              }} 
+          />
+          <ToolIcon 
+              label="Camera" 
+              icon={Camera} 
+              active={captureMode === 'camera'} 
+              onClick={() => {
+                  setCaptureMode('camera')
+                  setSessionState('idle')
+              }} 
+          />
+          <ToolIcon label="Stickers" icon={Smile} onClick={() => setIsPropertiesOpen(!isPropertiesOpen)} />
+          <ToolIcon 
+              label={session ? "Account" : "Sign In"} 
+              icon={session ? LogOut : LogIn} 
+              onClick={handleAuthAction}
+          />
+      </div>
     </div>
   )
 }
