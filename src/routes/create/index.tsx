@@ -1,12 +1,10 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useNavigate, Link } from '@tanstack/react-router'
 import { useState, useRef, useEffect } from 'react'
-import { toPng } from 'html-to-image'
 import { authClient } from '@/lib/auth-client'
-import { LayoutGrid, Upload, Smile, Wand2, LucideIcon, LogIn, LogOut, Camera, Timer, RefreshCcw, Check, X, FileImage, Film } from 'lucide-react'
-import { deductCreditFn } from '@/server/export'
+import { LayoutGrid, Upload, Smile, Wand2, LucideIcon, LogIn, LogOut, Camera, Timer, RefreshCcw, Check, X, FileImage, Film, ImageIcon } from 'lucide-react'
+import { exportPhotoboothFn } from '@/server/export'
 import { toast } from "sonner"
 import { Button } from '@/components/ui/button'
-import { generateGif } from '@/lib/gif-generator'
 
 export const Route = createFileRoute('/create/')({
   component: PhotoboothEditor,
@@ -16,6 +14,15 @@ const LAYOUTS = {
   '2x2': { cols: 2, rows: 2, count: 4, aspect: 'aspect-[2/3]' },
   '1x4': { cols: 1, rows: 4, count: 4, aspect: 'aspect-[1/4]' },
   '1x3': { cols: 1, rows: 3, count: 3, aspect: 'aspect-[1/3]' },
+}
+
+// Convert emoji to Twemoji CDN URL for consistent rendering
+function getEmojiUrl(emoji: string): string {
+  const codePoints = [...emoji]
+    .map(char => char.codePointAt(0)?.toString(16))
+    .filter(Boolean)
+    .join('-')
+  return `https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/72x72/${codePoints}.png`
 }
 
 function PhotoboothEditor() {
@@ -267,107 +274,54 @@ function PhotoboothEditor() {
           return
       }
 
-      if (!stripRef.current && exportType === 'png') return
-
       // @ts-ignore
       const currentCredits = session.user.credits as number
       
       const confirmExport = confirm(`Exporting will cost 1 Credit. You have ${currentCredits} credits. Proceed?`)
       if (!confirmExport) return
 
+      // Validate images
+      const validImages = images.filter(Boolean) as string[]
+      if (validImages.length === 0) {
+          toast.error("Please add at least one photo!")
+          return
+      }
+
       setIsExporting(true)
 
       try {
-          let dataUrlOrBlob: string | Blob
-          let filename: string
-
-          if (exportType === 'gif') {
-              console.log("Generating GIF...")
-              const validImages = images.filter(Boolean) as string[]
-              if (validImages.length === 0) {
-                  throw new Error("No images to generate GIF. Please add some photos!")
+          console.log("Sending to server for processing...")
+          
+          // Call server to generate image
+          const result = await exportPhotoboothFn({
+              data: {
+                  images: validImages,
+                  layout: selectedLayout,
+                  stickers: stickers,
+                  exportType: exportType,
               }
-              
-              dataUrlOrBlob = await generateGif(validImages, {
-                  width: selectedLayout === '1x4' ? 200 : 400,
-                  height: selectedLayout === '1x4' ? 800 : 600,
-                  delay: 500
-              })
-              filename = `ourbooth-${Date.now()}.gif`
-          } else {
-              // Existing PNG Logic
-              if (!stripRef.current) throw new Error("Canvas not found")
-              
-              // 1. Wait for UI to update (hide watermarks etc)
-              await new Promise(resolve => setTimeout(resolve, 300))
-
-              const node = stripRef.current
-              
-              // Wait for all images to fully decode
-              const imgs = node.querySelectorAll('img')
-              await Promise.all(
-                  Array.from(imgs).map(img => {
-                      if (img.complete) {
-                          return img.decode().catch(() => {})
-                      }
-                      return new Promise(resolve => {
-                          img.onload = () => img.decode().then(resolve).catch(resolve)
-                          img.onerror = resolve
-                      })
-                  })
-              )
-              
-              await new Promise(resolve => setTimeout(resolve, 200))
-              
-              const exportOptions = {
-                  cacheBust: true,
-                  pixelRatio: 2,
-                  backgroundColor: '#ffffff',
-                  canvasFilter: 'none',
-                  skipFonts: true,
-              }
-              
-              await toPng(node, exportOptions).catch(() => {})
-              await new Promise(resolve => setTimeout(resolve, 100))
-              
-              const dataUrl = await toPng(node, exportOptions).catch(e => {
-                  throw new Error(`Image generation failed: ${e.message}`)
-              })
-
-              if (!dataUrl || dataUrl.length < 100) {
-                  throw new Error("Generated image is empty or invalid.")
-              }
-              
-              dataUrlOrBlob = dataUrl
-              filename = `ourbooth-${Date.now()}.png`
-          }
-
-          // 2. Deduct Credit
-          console.log("Deducting credit...")
-          const result = await deductCreditFn().catch(e => {
-              throw new Error(`Server deduction failed: ${e.message}`)
           })
 
           if (!result.success) {
-              throw new Error("Credit deduction failed (Unknown error)")
+              throw new Error("Export failed (Unknown error)")
           }
 
-          // 3. Download
-          console.log("Downloading...")
+          // Download the generated image
+          console.log("Downloading from:", result.downloadUrl)
           const link = document.createElement('a')
-          link.download = filename
-          link.href = typeof dataUrlOrBlob === 'string' ? dataUrlOrBlob : URL.createObjectURL(dataUrlOrBlob)
+          link.download = `ourbooth-${Date.now()}.${exportType === 'gif' ? 'png' : 'png'}`
+          link.href = result.downloadUrl
+          link.target = '_blank'
           document.body.appendChild(link)
           link.click()
           document.body.removeChild(link)
-          if (typeof dataUrlOrBlob !== 'string') URL.revokeObjectURL(link.href)
           
           authClient.getSession() // Refresh UI credits
-          toast.success("Export successful!")
+          toast.success("Export successful! Photo saved to your gallery.")
 
       } catch (err: any) {
           console.error("Export Process Failed:", err)
-          alert(`Export Failed: ${err.message}`)
+          toast.error(`Export Failed: ${err.message}`)
       } finally {
           setIsExporting(false)
       }
@@ -411,6 +365,12 @@ function PhotoboothEditor() {
         </div>
         
         <div className="flex-1" />
+        
+        {session && (
+            <Link to="/photos">
+                <ToolIcon label="My Photos" icon={ImageIcon} />
+            </Link>
+        )}
         
         {session && (
             <div className="w-10 h-10 rounded-full overflow-hidden border border-white/20 mb-2">
@@ -677,16 +637,20 @@ function PhotoboothEditor() {
                                     key={s.id} 
                                     onMouseDown={(e) => handleDragStart(e, s.id)}
                                     onTouchStart={(e) => handleDragStart(e, s.id)}
-                                    className="absolute text-4xl z-40 drop-shadow-md select-none touch-none"
+                                    className="absolute z-40 drop-shadow-md select-none touch-none"
                                     style={{ 
                                         left: `${s.x}%`, 
                                         top: `${s.y}%`,
                                         transform: 'translate(-50%, -50%)',
                                         cursor: draggingStickerId === s.id ? 'grabbing' : 'grab',
-                                        fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol' 
                                     }}
                                 >
-                                    {s.emoji}
+                                    <img 
+                                        src={getEmojiUrl(s.emoji)} 
+                                        alt={s.emoji}
+                                        className="w-10 h-10 pointer-events-none"
+                                        draggable={false}
+                                    />
                                 </div>
                             ))}
                         </div>
@@ -763,9 +727,14 @@ function PhotoboothEditor() {
                         onClick={() => addSticker(emoji)}
                         draggable
                         onDragStart={(e) => handleDragStartFromSidebar(e, emoji)}
-                        className="aspect-square flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-lg text-2xl transition-colors"
+                        className="aspect-square flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-lg transition-colors p-2"
                      >
-                         {emoji}
+                         <img 
+                            src={getEmojiUrl(emoji)} 
+                            alt={emoji}
+                            className="w-6 h-6"
+                            draggable={false}
+                         />
                      </button>
                  ))}
              </div>

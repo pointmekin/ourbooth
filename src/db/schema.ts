@@ -66,3 +66,15 @@ export const order = pgTable("order", {
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+export const userPhoto = pgTable("user_photo", {
+    id: text("id").primaryKey(),
+    userId: text("user_id").references(() => user.id, { onDelete: 'cascade' }).notNull(),
+    type: text("type").notNull(), // 'png' | 'gif'
+    layout: text("layout").notNull(), // '2x2' | '1x4' | '1x3'
+    storageUrl: text("storage_url").notNull(), // GCP public/signed URL
+    storagePath: text("storage_path").notNull(), // GCP object path
+    thumbnailUrl: text("thumbnail_url"), // Optional thumbnail for gallery
+    fileSize: integer("file_size"), // bytes
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+});
