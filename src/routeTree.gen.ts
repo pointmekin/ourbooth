@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PhotosIndexRouteImport } from './routes/photos/index'
 import { Route as CreateIndexRouteImport } from './routes/create/index'
 import { Route as DemoTanstackQueryRouteImport } from './routes/demo/tanstack-query'
 import { Route as DemoNeonRouteImport } from './routes/demo/neon'
@@ -29,6 +30,11 @@ import { Route as DemoStartSsrDataOnlyRouteImport } from './routes/demo/start.ss
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PhotosIndexRoute = PhotosIndexRouteImport.update({
+  id: '/photos/',
+  path: '/photos/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CreateIndexRoute = CreateIndexRouteImport.update({
@@ -115,6 +121,7 @@ export interface FileRoutesByFullPath {
   '/demo/neon': typeof DemoNeonRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/create': typeof CreateIndexRoute
+  '/photos': typeof PhotosIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/api/tq-todos': typeof DemoApiTqTodosRoute
@@ -133,6 +140,7 @@ export interface FileRoutesByTo {
   '/demo/neon': typeof DemoNeonRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/create': typeof CreateIndexRoute
+  '/photos': typeof PhotosIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/api/tq-todos': typeof DemoApiTqTodosRoute
@@ -152,6 +160,7 @@ export interface FileRoutesById {
   '/demo/neon': typeof DemoNeonRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/create/': typeof CreateIndexRoute
+  '/photos/': typeof PhotosIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/api/tq-todos': typeof DemoApiTqTodosRoute
@@ -172,6 +181,7 @@ export interface FileRouteTypes {
     | '/demo/neon'
     | '/demo/tanstack-query'
     | '/create'
+    | '/photos'
     | '/api/auth/$'
     | '/demo/api/names'
     | '/demo/api/tq-todos'
@@ -190,6 +200,7 @@ export interface FileRouteTypes {
     | '/demo/neon'
     | '/demo/tanstack-query'
     | '/create'
+    | '/photos'
     | '/api/auth/$'
     | '/demo/api/names'
     | '/demo/api/tq-todos'
@@ -208,6 +219,7 @@ export interface FileRouteTypes {
     | '/demo/neon'
     | '/demo/tanstack-query'
     | '/create/'
+    | '/photos/'
     | '/api/auth/$'
     | '/demo/api/names'
     | '/demo/api/tq-todos'
@@ -227,6 +239,7 @@ export interface RootRouteChildren {
   DemoNeonRoute: typeof DemoNeonRoute
   DemoTanstackQueryRoute: typeof DemoTanstackQueryRoute
   CreateIndexRoute: typeof CreateIndexRoute
+  PhotosIndexRoute: typeof PhotosIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   DemoApiNamesRoute: typeof DemoApiNamesRoute
   DemoApiTqTodosRoute: typeof DemoApiTqTodosRoute
@@ -245,6 +258,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/photos/': {
+      id: '/photos/'
+      path: '/photos'
+      fullPath: '/photos'
+      preLoaderRoute: typeof PhotosIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/create/': {
@@ -363,6 +383,7 @@ const rootRouteChildren: RootRouteChildren = {
   DemoNeonRoute: DemoNeonRoute,
   DemoTanstackQueryRoute: DemoTanstackQueryRoute,
   CreateIndexRoute: CreateIndexRoute,
+  PhotosIndexRoute: PhotosIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   DemoApiNamesRoute: DemoApiNamesRoute,
   DemoApiTqTodosRoute: DemoApiTqTodosRoute,

@@ -1,12 +1,10 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useNavigate, Link } from '@tanstack/react-router'
 import { useState, useRef, useEffect } from 'react'
-import { toPng } from 'html-to-image'
 import { authClient } from '@/lib/auth-client'
-import { LayoutGrid, Upload, Smile, Wand2, LucideIcon, LogIn, LogOut, Camera, Timer, RefreshCcw, Check, X, FileImage, Film } from 'lucide-react'
-import { deductCreditFn } from '@/server/export'
+import { LayoutGrid, Upload, Smile, Wand2, LucideIcon, LogIn, LogOut, Camera, Timer, RefreshCcw, Check, X, FileImage, Film, ImageIcon } from 'lucide-react'
+import { exportPhotoboothFn } from '@/server/export'
 import { toast } from "sonner"
 import { Button } from '@/components/ui/button'
-import { generateGif } from '@/lib/gif-generator'
 
 export const Route = createFileRoute('/create/')({
   component: PhotoboothEditor,
@@ -267,107 +265,54 @@ function PhotoboothEditor() {
           return
       }
 
-      if (!stripRef.current && exportType === 'png') return
-
       // @ts-ignore
       const currentCredits = session.user.credits as number
       
       const confirmExport = confirm(`Exporting will cost 1 Credit. You have ${currentCredits} credits. Proceed?`)
       if (!confirmExport) return
 
+      // Validate images
+      const validImages = images.filter(Boolean) as string[]
+      if (validImages.length === 0) {
+          toast.error("Please add at least one photo!")
+          return
+      }
+
       setIsExporting(true)
 
       try {
-          let dataUrlOrBlob: string | Blob
-          let filename: string
-
-          if (exportType === 'gif') {
-              console.log("Generating GIF...")
-              const validImages = images.filter(Boolean) as string[]
-              if (validImages.length === 0) {
-                  throw new Error("No images to generate GIF. Please add some photos!")
+          console.log("Sending to server for processing...")
+          
+          // Call server to generate image
+          const result = await exportPhotoboothFn({
+              data: {
+                  images: validImages,
+                  layout: selectedLayout,
+                  stickers: stickers,
+                  exportType: exportType,
               }
-              
-              dataUrlOrBlob = await generateGif(validImages, {
-                  width: selectedLayout === '1x4' ? 200 : 400,
-                  height: selectedLayout === '1x4' ? 800 : 600,
-                  delay: 500
-              })
-              filename = `ourbooth-${Date.now()}.gif`
-          } else {
-              // Existing PNG Logic
-              if (!stripRef.current) throw new Error("Canvas not found")
-              
-              // 1. Wait for UI to update (hide watermarks etc)
-              await new Promise(resolve => setTimeout(resolve, 300))
-
-              const node = stripRef.current
-              
-              // Wait for all images to fully decode
-              const imgs = node.querySelectorAll('img')
-              await Promise.all(
-                  Array.from(imgs).map(img => {
-                      if (img.complete) {
-                          return img.decode().catch(() => {})
-                      }
-                      return new Promise(resolve => {
-                          img.onload = () => img.decode().then(resolve).catch(resolve)
-                          img.onerror = resolve
-                      })
-                  })
-              )
-              
-              await new Promise(resolve => setTimeout(resolve, 200))
-              
-              const exportOptions = {
-                  cacheBust: true,
-                  pixelRatio: 2,
-                  backgroundColor: '#ffffff',
-                  canvasFilter: 'none',
-                  skipFonts: true,
-              }
-              
-              await toPng(node, exportOptions).catch(() => {})
-              await new Promise(resolve => setTimeout(resolve, 100))
-              
-              const dataUrl = await toPng(node, exportOptions).catch(e => {
-                  throw new Error(`Image generation failed: ${e.message}`)
-              })
-
-              if (!dataUrl || dataUrl.length < 100) {
-                  throw new Error("Generated image is empty or invalid.")
-              }
-              
-              dataUrlOrBlob = dataUrl
-              filename = `ourbooth-${Date.now()}.png`
-          }
-
-          // 2. Deduct Credit
-          console.log("Deducting credit...")
-          const result = await deductCreditFn().catch(e => {
-              throw new Error(`Server deduction failed: ${e.message}`)
           })
 
           if (!result.success) {
-              throw new Error("Credit deduction failed (Unknown error)")
+              throw new Error("Export failed (Unknown error)")
           }
 
-          // 3. Download
-          console.log("Downloading...")
+          // Download the generated image
+          console.log("Downloading from:", result.downloadUrl)
           const link = document.createElement('a')
-          link.download = filename
-          link.href = typeof dataUrlOrBlob === 'string' ? dataUrlOrBlob : URL.createObjectURL(dataUrlOrBlob)
+          link.download = `ourbooth-${Date.now()}.${exportType === 'gif' ? 'png' : 'png'}`
+          link.href = result.downloadUrl
+          link.target = '_blank'
           document.body.appendChild(link)
           link.click()
           document.body.removeChild(link)
-          if (typeof dataUrlOrBlob !== 'string') URL.revokeObjectURL(link.href)
           
           authClient.getSession() // Refresh UI credits
-          toast.success("Export successful!")
+          toast.success("Export successful! Photo saved to your gallery.")
 
       } catch (err: any) {
           console.error("Export Process Failed:", err)
-          alert(`Export Failed: ${err.message}`)
+          toast.error(`Export Failed: ${err.message}`)
       } finally {
           setIsExporting(false)
       }
@@ -411,6 +356,12 @@ function PhotoboothEditor() {
         </div>
         
         <div className="flex-1" />
+        
+        {session && (
+            <Link to="/photos">
+                <ToolIcon label="My Photos" icon={ImageIcon} />
+            </Link>
+        )}
         
         {session && (
             <div className="w-10 h-10 rounded-full overflow-hidden border border-white/20 mb-2">
