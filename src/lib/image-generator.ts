@@ -21,13 +21,28 @@ const LAYOUT_CONFIG = {
 }
 
 /**
+ * Convert emoji to Twemoji CDN URL
+ * Twemoji provides high-quality PNG emoji images
+ */
+function getEmojiUrl(emoji: string): string {
+    // Convert emoji to code points
+    const codePoints = [...emoji]
+        .map(char => char.codePointAt(0)?.toString(16))
+        .filter(Boolean)
+        .join('-')
+    
+    // Use Twemoji CDN (72x72 PNG)
+    return `https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/72x72/${codePoints}.png`
+}
+
+/**
  * Generate a photo strip from multiple images
  */
 export async function generatePhotoStrip(
     imageDataUrls: string[],
     options: GenerateOptions
 ): Promise<Buffer> {
-    const { layout, width = 800, quality = 80 } = options
+    const { layout, stickers = [], width = 800, quality = 80 } = options
     const config = LAYOUT_CONFIG[layout]
 
     // Calculate dimensions
@@ -109,6 +124,50 @@ export async function generatePhotoStrip(
         left: 0,
         top: footerY,
     })
+
+    // Add stickers/emojis using Twemoji PNG images
+    if (stickers && stickers.length > 0) {
+        const stickerSize = Math.round(width * 0.08) // 8% of width for emoji size
+        
+        for (const sticker of stickers) {
+            try {
+                // Convert emoji to Twemoji URL
+                const emojiUrl = getEmojiUrl(sticker.emoji)
+                
+                // Fetch the emoji PNG from Twemoji CDN
+                const response = await fetch(emojiUrl)
+                if (!response.ok) {
+                    console.warn(`[ImageGenerator] Failed to fetch emoji: ${sticker.emoji}`)
+                    continue
+                }
+                
+                const emojiBuffer = Buffer.from(await response.arrayBuffer())
+                
+                // Resize emoji to desired size
+                const resizedEmoji = await sharp(emojiBuffer)
+                    .resize(stickerSize, stickerSize, {
+                        fit: 'contain',
+                        background: { r: 0, g: 0, b: 0, alpha: 0 },
+                    })
+                    .png()
+                    .toBuffer()
+                
+                // Convert percentage to absolute position
+                const stickerX = Math.round((sticker.x / 100) * width) - stickerSize / 2
+                const stickerY = Math.round((sticker.y / 100) * height) - stickerSize / 2
+                
+                composites.push({
+                    input: resizedEmoji,
+                    left: Math.max(0, Math.min(stickerX, width - stickerSize)),
+                    top: Math.max(0, Math.min(stickerY, height - stickerSize)),
+                })
+            } catch (e) {
+                console.error(`[ImageGenerator] Failed to add sticker ${sticker.emoji}:`, e)
+            }
+        }
+        
+        console.log(`[ImageGenerator] Added ${stickers.length} stickers to image`)
+    }
 
     // Generate final image
     const result = await canvas

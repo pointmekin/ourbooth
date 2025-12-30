@@ -16,6 +16,15 @@ const LAYOUTS = {
   '1x3': { cols: 1, rows: 3, count: 3, aspect: 'aspect-[1/3]' },
 }
 
+// Convert emoji to Twemoji CDN URL for consistent rendering
+function getEmojiUrl(emoji: string): string {
+  const codePoints = [...emoji]
+    .map(char => char.codePointAt(0)?.toString(16))
+    .filter(Boolean)
+    .join('-')
+  return `https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/72x72/${codePoints}.png`
+}
+
 function PhotoboothEditor() {
   const [selectedLayout, setSelectedLayout] = useState<keyof typeof LAYOUTS>('2x2')
   const [images, setImages] = useState<(string | null)[]>(Array(4).fill(null))
@@ -628,16 +637,20 @@ function PhotoboothEditor() {
                                     key={s.id} 
                                     onMouseDown={(e) => handleDragStart(e, s.id)}
                                     onTouchStart={(e) => handleDragStart(e, s.id)}
-                                    className="absolute text-4xl z-40 drop-shadow-md select-none touch-none"
+                                    className="absolute z-40 drop-shadow-md select-none touch-none"
                                     style={{ 
                                         left: `${s.x}%`, 
                                         top: `${s.y}%`,
                                         transform: 'translate(-50%, -50%)',
                                         cursor: draggingStickerId === s.id ? 'grabbing' : 'grab',
-                                        fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol' 
                                     }}
                                 >
-                                    {s.emoji}
+                                    <img 
+                                        src={getEmojiUrl(s.emoji)} 
+                                        alt={s.emoji}
+                                        className="w-10 h-10 pointer-events-none"
+                                        draggable={false}
+                                    />
                                 </div>
                             ))}
                         </div>
@@ -714,9 +727,14 @@ function PhotoboothEditor() {
                         onClick={() => addSticker(emoji)}
                         draggable
                         onDragStart={(e) => handleDragStartFromSidebar(e, emoji)}
-                        className="aspect-square flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-lg text-2xl transition-colors"
+                        className="aspect-square flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-lg transition-colors p-2"
                      >
-                         {emoji}
+                         <img 
+                            src={getEmojiUrl(emoji)} 
+                            alt={emoji}
+                            className="w-6 h-6"
+                            draggable={false}
+                         />
                      </button>
                  ))}
              </div>
