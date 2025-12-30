@@ -105,17 +105,18 @@ export async function generatePhotoStrip(
     // Add footer text
     const footerY = height - footerHeight
     const footerSvg = `
-        <svg width="${width}" height="${footerHeight}">
+        <svg width="${width}" height="${footerHeight}" xmlns="http://www.w3.org/2000/svg">
             <rect x="0" y="0" width="${width}" height="1" fill="#f5f5f5"/>
             <text 
                 x="${width / 2}" 
                 y="${footerHeight / 2 + 4}" 
-                font-family="monospace" 
-                font-size="12" 
+                font-family="Arial, Helvetica, sans-serif" 
+                font-size="14" 
+                font-weight="500"
                 fill="#a3a3a3"
                 text-anchor="middle"
-                letter-spacing="3"
-            >OURBOOTH • 2025</text>
+                letter-spacing="2"
+            >OURBOOTH 2025</text>
         </svg>
     `
 
