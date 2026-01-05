@@ -38,6 +38,7 @@ function PhotoboothEditor() {
   const [capturedPhotos, setCapturedPhotos] = useState<string[]>([])
   const [selectedPhotos, setSelectedPhotos] = useState<Set<number>>(new Set())
   const [exportType, setExportType] = useState<'png' | 'gif'>('png')
+  const [confirmPending, setConfirmPending] = useState(false)
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -267,25 +268,56 @@ function PhotoboothEditor() {
       }
   }
 
-  const handleExport = async () => {
+  const handleExportClick = () => {
       if (!session) {
-          alert("Please sign in to export your masterpiece!")
+          toast.error("Please sign in to export your masterpiece!")
           navigate({ to: '/auth/signin' })
+          return
+      }
+
+      // Validate images first
+      const validImages = images.filter(Boolean) as string[]
+      if (validImages.length === 0) {
+          toast.error("Please add at least one photo!")
           return
       }
 
       // @ts-ignore
       const currentCredits = session.user.credits as number
       
-      const confirmExport = confirm(`Exporting will cost 1 Credit. You have ${currentCredits} credits. Proceed?`)
-      if (!confirmExport) return
+      // Show confirmation toast instead of native confirm() which Brave blocks
+      setConfirmPending(true)
+      toast(
+          <div className="flex flex-col gap-2">
+              <p className="font-medium">Export will cost 1 Credit</p>
+              <p className="text-sm text-neutral-400">You have {currentCredits} credits</p>
+              <div className="flex gap-2 mt-2">
+                  <button
+                      onClick={() => {
+                          toast.dismiss()
+                          setConfirmPending(false)
+                          handleExportConfirmed(validImages)
+                      }}
+                      className="px-4 py-2 bg-rose-600 text-white rounded-lg text-sm font-medium"
+                  >
+                      Confirm Export
+                  </button>
+                  <button
+                      onClick={() => {
+                          toast.dismiss()
+                          setConfirmPending(false)
+                      }}
+                      className="px-4 py-2 bg-neutral-700 text-white rounded-lg text-sm font-medium"
+                  >
+                      Cancel
+                  </button>
+              </div>
+          </div>,
+          { duration: 10000 }
+      )
+  }
 
-      // Validate images
-      const validImages = images.filter(Boolean) as string[]
-      if (validImages.length === 0) {
-          toast.error("Please add at least one photo!")
-          return
-      }
+  const handleExportConfirmed = async (validImages: string[]) => {
 
       setIsExporting(true)
 
@@ -306,15 +338,29 @@ function PhotoboothEditor() {
               throw new Error("Export failed (Unknown error)")
           }
 
-          // Download the generated image
+          // Download the generated image using fetch + Blob for cross-browser compatibility
+          // This avoids Brave mobile's aggressive blocking of programmatic link.click() with target='_blank'
           console.log("Downloading from:", result.downloadUrl)
-          const link = document.createElement('a')
-          link.download = `ourbooth-${Date.now()}.${exportType === 'gif' ? 'png' : 'png'}`
-          link.href = result.downloadUrl
-          link.target = '_blank'
-          document.body.appendChild(link)
-          link.click()
-          document.body.removeChild(link)
+          
+          try {
+              const response = await fetch(result.downloadUrl)
+              const blob = await response.blob()
+              const blobUrl = URL.createObjectURL(blob)
+              
+              const link = document.createElement('a')
+              link.download = `ourbooth-${Date.now()}.png`
+              link.href = blobUrl
+              document.body.appendChild(link)
+              link.click()
+              document.body.removeChild(link)
+              
+              // Clean up the blob URL after a short delay
+              setTimeout(() => URL.revokeObjectURL(blobUrl), 1000)
+          } catch (downloadErr) {
+              console.error("Download failed, falling back to window.open:", downloadErr)
+              // Fallback: open in new tab if blob download fails
+              window.open(result.downloadUrl, '_blank')
+          }
           
           authClient.getSession() // Refresh UI credits
           toast.success("Export successful! Photo saved to your gallery.")
@@ -396,7 +442,12 @@ function PhotoboothEditor() {
       {/* MAIN CANVAS AREA */}
       <main className="flex-1 flex flex-col relative overflow-hidden">
         {/* Header */}
-        <header className="h-16 border-b border-white/5 flex items-center justify-between px-4 md:px-8 bg-neutral-950/80 backdrop-blur-md z-50 cursor-default">
+        <header 
+            className="h-16 border-b border-white/5 flex items-center justify-between px-4 md:px-8 bg-neutral-950/80 backdrop-blur-md z-50 cursor-default"
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+        >
             <h1 className="text-xl font-bold tracking-tighter bg-linear-to-br from-white to-white/50 bg-clip-text text-transparent">
                 OURBOOTH
             </h1>
@@ -420,18 +471,11 @@ function PhotoboothEditor() {
                         GIF
                     </button>
                 </div>
-               <Button 
+               <button 
                 type="button"
-                onClick={handleExport}
-                disabled={isExporting}
-                onTouchEnd={(e) => {
-                    e.stopPropagation()
-                }}
+                onClick={handleExportClick}
+                disabled={isExporting || confirmPending}
                 className="px-4 md:px-6 py-2 bg-rose-600 hover:bg-rose-500 active:bg-rose-700 disabled:bg-rose-900 disabled:opacity-50 text-white text-xs md:text-sm font-semibold rounded-full shadow-[0_0_20px_-5px_rgba(225,29,72,0.6)] transition-all cursor-pointer flex items-center gap-2"
-                style={{ 
-                    WebkitTapHighlightColor: 'transparent',
-                    touchAction: 'manipulation'
-                }}
                >
                    {isExporting ? (
                        <>
@@ -441,7 +485,7 @@ function PhotoboothEditor() {
                    ) : (
                        session ? `Export ${exportType.toUpperCase()} (1 Credit)` : 'Sign in'
                    )}
-               </Button>
+               </button>
             </div>
         </header>
 
