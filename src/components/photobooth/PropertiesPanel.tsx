@@ -1,14 +1,7 @@
+import { useState } from 'react'
 import { toast } from 'sonner'
-import { usePhotoboothStore } from '@/stores/photobooth-store'
-
-// Convert emoji to Twemoji CDN URL for consistent rendering
-function getEmojiUrl(emoji: string): string {
-  const codePoints = [...emoji]
-    .map(char => char.codePointAt(0)?.toString(16))
-    .filter(Boolean)
-    .join('-')
-  return `https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/72x72/${codePoints}.png`
-}
+import { usePhotoboothStore, type StickerType } from '@/stores/photobooth-store'
+import { STICKER_PACKS, type StickerItem } from '@/constants/stickers'
 
 interface PropertiesPanelProps {
   isOpen: boolean
@@ -16,20 +9,31 @@ interface PropertiesPanelProps {
 }
 
 export function PropertiesPanel({ isOpen, onClose }: PropertiesPanelProps) {
-  const { selectedLayout, setLayout, addSticker } = usePhotoboothStore()
+  const { selectedTemplate, addSticker } = usePhotoboothStore()
+  const [activePackId, setActivePackId] = useState(STICKER_PACKS[0].id)
 
-  const handleAddSticker = (emoji: string) => {
-    addSticker(emoji)
+  const activePack = STICKER_PACKS.find(p => p.id === activePackId) ?? STICKER_PACKS[0]
+
+  const handleAddSticker = (sticker: StickerItem) => {
+    addSticker(
+      sticker.type === 'emoji' ? sticker.name : sticker.src,
+      50,
+      50,
+      sticker.type as StickerType
+    )
     toast(
       <div className="flex items-center gap-2">
-        <span className="text-xl">{emoji}</span>
+        <img src={sticker.src} alt={sticker.name} className="w-6 h-6" />
         <span className="font-semibold text-sm">Added to canvas!</span>
       </div>
     )
   }
 
-  const handleDragStart = (e: React.DragEvent, emoji: string) => {
-    e.dataTransfer.setData('emoji', emoji)
+  const handleDragStart = (e: React.DragEvent, sticker: StickerItem) => {
+    // Store both the source and type for drop handling
+    e.dataTransfer.setData('sticker-type', sticker.type)
+    e.dataTransfer.setData('sticker-src', sticker.type === 'emoji' ? sticker.name : sticker.src)
+    e.dataTransfer.effectAllowed = 'copy'
   }
 
   return (
@@ -49,51 +53,64 @@ export function PropertiesPanel({ isOpen, onClose }: PropertiesPanelProps) {
         </button>
       </div>
     
-      {/* Layout Selector */}
-      <div className="space-y-4 mb-8">
-        <div className="text-sm font-medium text-neutral-300">Layout</div>
-        <div className="grid grid-cols-2 gap-2">
-          <div 
-            onClick={() => setLayout('2x2')}
-            className={`aspect-3/4 border rounded-sm cursor-pointer transition-colors ${selectedLayout === '2x2' ? 'border-rose-500/50 bg-rose-500/10' : 'border-white/10 hover:border-white/30'}`} 
-          >
-            <div className="w-full h-full grid grid-cols-2 grid-rows-2 gap-1 p-2">
-              {[1,2,3,4].map(i => <div key={i} className="bg-current opacity-20" />)}
-            </div>
-          </div>
-          <div 
-            onClick={() => setLayout('1x4')}
-            className={`aspect-3/4 border rounded-sm cursor-pointer transition-colors ${selectedLayout === '1x4' ? 'border-rose-500/50 bg-rose-500/10' : 'border-white/10 hover:border-white/30'}`} 
-          >
-            <div className="w-full h-full grid grid-cols-1 grid-rows-4 gap-1 p-2 py-4 px-6">
-              {[1,2,3,4].map(i => <div key={i} className="bg-current opacity-20" />)}
-            </div>
-          </div>
+      {/* Current Template */}
+      {selectedTemplate && (
+        <div className="space-y-2 mb-8 p-3 bg-white/5 rounded-lg border border-white/10">
+          <div className="text-xs font-medium text-neutral-500 uppercase tracking-wider">Template</div>
+          <div className="text-sm font-semibold text-white">{selectedTemplate.name}</div>
+          <div className="text-xs text-neutral-400 capitalize">{selectedTemplate.category} • {selectedTemplate.layout.count} photos</div>
         </div>
-      </div>
+      )}
 
       {/* Stickers Selector */}
       <div className="space-y-4">
         <div className="text-sm font-medium text-neutral-300">Decorations</div>
-        <div className="grid grid-cols-4 gap-2">
-          {['🎀', '✨', '💖', '🔥', '👑', '🕶️', '🌸', '💀'].map(emoji => (
+        
+        {/* Pack Tabs */}
+        <div className="flex gap-1 p-1 bg-white/5 rounded-lg">
+          {STICKER_PACKS.map(pack => (
+            <button
+              key={pack.id}
+              onClick={() => setActivePackId(pack.id)}
+              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition-colors ${
+                activePackId === pack.id 
+                  ? 'bg-rose-500/20 text-rose-400' 
+                  : 'text-neutral-400 hover:text-neutral-200 hover:bg-white/5'
+              }`}
+            >
+              <span>{pack.icon}</span>
+              <span>{pack.name}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Sticker Grid */}
+        <div className="grid grid-cols-4 gap-2 max-h-64 overflow-y-auto pr-1">
+          {activePack.stickers.map(sticker => (
             <button 
-              key={emoji}
-              onClick={() => handleAddSticker(emoji)}
+              key={sticker.id}
+              onClick={() => handleAddSticker(sticker)}
               draggable
-              onDragStart={(e) => handleDragStart(e, emoji)}
-              className="aspect-square flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-lg transition-colors p-2"
+              onDragStart={(e) => handleDragStart(e, sticker)}
+              className="aspect-square flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-lg transition-colors p-2 cursor-grab active:cursor-grabbing"
+              title={sticker.name}
             >
               <img 
-                src={getEmojiUrl(emoji)} 
-                alt={emoji}
-                className="w-6 h-6"
+                src={sticker.src} 
+                alt={sticker.name}
+                className="w-8 h-8 object-contain"
                 draggable={false}
               />
             </button>
           ))}
         </div>
+
+        {/* Tip */}
+        <p className="text-xs text-neutral-500 mt-2">
+          Tip: Drag stickers onto the canvas. Drag corners to resize.
+        </p>
       </div>
     </aside>
   )
 }
+

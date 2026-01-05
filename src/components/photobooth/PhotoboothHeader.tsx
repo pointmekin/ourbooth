@@ -11,7 +11,7 @@ export function PhotoboothHeader() {
   const navigate = useNavigate()
   const { data: session } = authClient.useSession()
   
-  const { images, stickers, selectedLayout, exportType, setExportType } = usePhotoboothStore()
+  const { images, stickers, selectedTemplate, exportType, setExportType } = usePhotoboothStore()
   
   const [isExporting, setIsExporting] = useState(false)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
@@ -42,8 +42,16 @@ export function PhotoboothHeader() {
       const result = await exportPhotoboothFn({
         data: {
           images: validImages,
-          layout: selectedLayout,
-          stickers: stickers,
+          templateId: selectedTemplate?.id ?? 'classic-2x2',
+          stickers: stickers.map(s => ({
+            id: s.id,
+            x: s.x,
+            y: s.y,
+            type: s.type,
+            emoji: s.emoji,
+            src: s.src,
+            scale: s.scale,
+          })),
           exportType: exportType,
         }
       })

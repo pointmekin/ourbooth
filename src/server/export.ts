@@ -1,15 +1,22 @@
 import { createServerFn } from '@tanstack/react-start'
 import { getRequest } from '@tanstack/react-start/server'
 
+export type StickerType = 'emoji' | 'image'
+
+export interface ExportSticker {
+    id: number
+    x: number
+    y: number
+    type: StickerType
+    emoji?: string      // For emoji type
+    src?: string        // For image type (URL path)
+    scale: number
+}
+
 interface ExportInput {
     images: string[] // base64 data URLs
-    layout: '2x2' | '1x4' | '1x3'
-    stickers?: {
-        id: number
-        x: number
-        y: number
-        emoji: string
-    }[]
+    templateId: string
+    stickers?: ExportSticker[]
     exportType: 'png' | 'gif'
 }
 
@@ -41,7 +48,7 @@ export const exportPhotoboothFn = createServerFn({ method: 'POST' })
             }
 
             const userId = session.user.id
-            const { images, layout, stickers, exportType } = data
+            const { images, templateId, stickers, exportType } = data
 
             // Check credits
             const [currentUser] = await db.select().from(user).where(eq(user.id, userId))
@@ -57,10 +64,10 @@ export const exportPhotoboothFn = createServerFn({ method: 'POST' })
                 throw new Error("No images provided")
             }
 
-            console.log(`[Export] Generating ${exportType} for user ${userId}, layout: ${layout}, images: ${validImages.length}`)
+            console.log(`[Export] Generating ${exportType} for user ${userId}, template: ${templateId}, images: ${validImages.length}`)
 
             // Generate the image
-            const imageBuffer = await generatePhotoStrip(validImages, { layout, stickers })
+            const imageBuffer = await generatePhotoStrip(validImages, { templateId, stickers })
             const contentType = 'image/png'
             const fileExtension = 'png'
 
@@ -83,7 +90,7 @@ export const exportPhotoboothFn = createServerFn({ method: 'POST' })
                 id: photoId,
                 userId: userId,
                 type: exportType,
-                layout: layout,
+                layout: templateId,
                 storageUrl: photoUpload.url,
                 storagePath: photoUpload.path,
                 thumbnailUrl: thumbUpload.url,

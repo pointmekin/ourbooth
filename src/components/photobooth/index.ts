@@ -5,3 +5,6 @@ export { CameraView } from './CameraView'
 export { PropertiesPanel } from './PropertiesPanel'
 export { ToolSidebar } from './ToolSidebar'
 export { MobileToolbar } from './MobileToolbar'
+export { TemplateGallery } from './TemplateGallery'
+export { ResizableSticker } from './ResizableSticker'
+

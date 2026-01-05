@@ -1,23 +1,23 @@
 import sharp from 'sharp'
+import { getTemplateById, TEMPLATES } from '@/data/templates'
 
-interface Sticker {
+export type StickerType = 'emoji' | 'image'
+
+export interface Sticker {
     id: number
     x: number // percentage 0-100
-    y: number // percentage 0-100  
-    emoji: string
+    y: number // percentage 0-100
+    type: StickerType
+    emoji?: string      // For emoji type
+    src?: string        // For image type (URL path like /assets/images/stickers/love/heart.webp)
+    scale: number       // 0.3 to 3.0 (1.0 = default size)
 }
 
 interface GenerateOptions {
-    layout: '2x2' | '1x4' | '1x3'
+    templateId: string
     stickers?: Sticker[]
     width?: number
     quality?: number
-}
-
-const LAYOUT_CONFIG = {
-    '2x2': { cols: 2, rows: 2, count: 4, aspectRatio: 2 / 3 },
-    '1x4': { cols: 1, rows: 4, count: 4, aspectRatio: 1 / 4 },
-    '1x3': { cols: 1, rows: 3, count: 3, aspectRatio: 1 / 3 },
 }
 
 /**
@@ -36,32 +36,86 @@ function getEmojiUrl(emoji: string): string {
 }
 
 /**
+ * Fetch a sticker image from either Twemoji CDN or local public folder
+ */
+async function fetchStickerImage(sticker: Sticker): Promise<Buffer | null> {
+    try {
+        let url: string
+        
+        if (sticker.type === 'emoji' && sticker.emoji) {
+            url = getEmojiUrl(sticker.emoji)
+        } else if (sticker.type === 'image' && sticker.src) {
+            // For local images, construct the full URL
+            // In production, this should be the full URL to the asset
+            const baseUrl = process.env.VERCEL_URL 
+                ? `https://${process.env.VERCEL_URL}` 
+                : process.env.CF_PAGES_URL || 'http://localhost:3000'
+            url = `${baseUrl}${sticker.src}`
+        } else {
+            console.warn(`[ImageGenerator] Invalid sticker configuration:`, sticker)
+            return null
+        }
+        
+        const response = await fetch(url)
+        if (!response.ok) {
+            console.warn(`[ImageGenerator] Failed to fetch sticker from ${url}: ${response.status}`)
+            return null
+        }
+        
+        return Buffer.from(await response.arrayBuffer())
+    } catch (e) {
+        console.error(`[ImageGenerator] Failed to fetch sticker:`, e)
+        return null
+    }
+}
+
+/**
  * Generate a photo strip from multiple images
  */
 export async function generatePhotoStrip(
     imageDataUrls: string[],
     options: GenerateOptions
 ): Promise<Buffer> {
-    const { layout, stickers = [], width = 800, quality = 80 } = options
-    const config = LAYOUT_CONFIG[layout]
-
-    // Calculate dimensions
-    const height = Math.round(width / config.aspectRatio)
-    const padding = Math.round(width * 0.02) // 2% padding
-    const footerHeight = Math.round(height * 0.08) // 8% footer
+    const { templateId, stickers = [], width = 800, quality = 80 } = options
+    
+    // Get template configuration
+    const template = getTemplateById(templateId) ?? TEMPLATES[0]
+    const { layout, style, footer } = template
+    
+    // Calculate dimensions based on aspect ratio
+    const [aspectW, aspectH] = layout.aspectRatio.split('/').map(Number)
+    const aspectRatio = aspectW / aspectH
+    const height = Math.round(width / aspectRatio)
+    
+    // Use template-defined padding/gap or fallback
+    const padding = style.padding ? Math.round((style.padding / 16) * (width / 50)) : Math.round(width * 0.02)
+    const gap = style.gap ? Math.round((style.gap / 16) * (width / 50)) : Math.round(width * 0.01)
+    const footerHeight = footer.text ? Math.round(height * 0.08) : 0
+    const photoRadius = style.photoRadius ?? 0
 
     const gridWidth = width - padding * 2
     const gridHeight = height - padding * 2 - footerHeight
-    const cellWidth = Math.floor((gridWidth - (config.cols - 1) * padding) / config.cols)
-    const cellHeight = Math.floor((gridHeight - (config.rows - 1) * padding) / config.rows)
+    const cellWidth = Math.floor((gridWidth - (layout.cols - 1) * gap) / layout.cols)
+    const cellHeight = Math.floor((gridHeight - (layout.rows - 1) * gap) / layout.rows)
 
-    // Create white background
+    // Parse background color (handle gradients as solid fallback for server)
+    let bgColor = { r: 255, g: 255, b: 255 }
+    if (style.backgroundColor.startsWith('#')) {
+        const hex = style.backgroundColor.slice(1)
+        bgColor = {
+            r: parseInt(hex.slice(0, 2), 16),
+            g: parseInt(hex.slice(2, 4), 16),
+            b: parseInt(hex.slice(4, 6), 16),
+        }
+    }
+
+    // Create background
     const canvas = sharp({
         create: {
             width,
             height,
             channels: 3,
-            background: { r: 255, g: 255, b: 255 },
+            background: bgColor,
         },
     })
 
@@ -69,15 +123,15 @@ export async function generatePhotoStrip(
     const composites: sharp.OverlayOptions[] = []
 
     // Add images to grid
-    for (let i = 0; i < config.count; i++) {
+    for (let i = 0; i < layout.count; i++) {
         const dataUrl = imageDataUrls[i]
         if (!dataUrl) continue
 
-        const col = i % config.cols
-        const row = Math.floor(i / config.cols)
+        const col = i % layout.cols
+        const row = Math.floor(i / layout.cols)
 
-        const x = padding + col * (cellWidth + padding)
-        const y = padding + row * (cellHeight + padding)
+        const x = padding + col * (cellWidth + gap)
+        const y = padding + row * (cellHeight + gap)
 
         try {
             // Convert data URL to buffer
@@ -85,12 +139,26 @@ export async function generatePhotoStrip(
             const imageBuffer = Buffer.from(base64Data, 'base64')
 
             // Resize and crop to fit cell
-            const resizedImage = await sharp(imageBuffer)
+            let resizedImage = await sharp(imageBuffer)
                 .resize(cellWidth, cellHeight, {
                     fit: 'cover',
                     position: 'center',
                 })
                 .toBuffer()
+
+            // Apply border radius if specified
+            if (photoRadius > 0) {
+                const scaledRadius = Math.round((photoRadius / 16) * (width / 50))
+                const mask = Buffer.from(
+                    `<svg width="${cellWidth}" height="${cellHeight}">
+                        <rect x="0" y="0" width="${cellWidth}" height="${cellHeight}" rx="${scaledRadius}" ry="${scaledRadius}" fill="white"/>
+                    </svg>`
+                )
+                resizedImage = await sharp(resizedImage)
+                    .composite([{ input: mask, blend: 'dest-in' }])
+                    .png()
+                    .toBuffer()
+            }
 
             composites.push({
                 input: resizedImage,
@@ -102,50 +170,47 @@ export async function generatePhotoStrip(
         }
     }
 
-    // Add footer text
-    const footerY = height - footerHeight
-    const footerSvg = `
-        <svg width="${width}" height="${footerHeight}" xmlns="http://www.w3.org/2000/svg">
-            <rect x="0" y="0" width="${width}" height="1" fill="#f5f5f5"/>
-            <text 
-                x="${width / 2}" 
-                y="${footerHeight / 2 + 4}" 
-                font-family="Arial, Helvetica, sans-serif" 
-                font-size="14" 
-                font-weight="500"
-                fill="#a3a3a3"
-                text-anchor="middle"
-                letter-spacing="2"
-            >OURBOOTH 2025</text>
-        </svg>
-    `
+    // Add footer text if present
+    if (footer.text) {
+        const footerY = height - footerHeight
+        const fontSize = footer.size ? parseInt(footer.size) : 14
+        const footerSvg = `
+            <svg width="${width}" height="${footerHeight}" xmlns="http://www.w3.org/2000/svg">
+                <rect x="0" y="0" width="${width}" height="1" fill="#f5f5f5"/>
+                <text 
+                    x="${width / 2}" 
+                    y="${footerHeight / 2 + 4}" 
+                    font-family="Arial, Helvetica, sans-serif" 
+                    font-size="${fontSize}" 
+                    font-weight="500"
+                    fill="${footer.color}"
+                    text-anchor="middle"
+                    letter-spacing="2"
+                >${footer.text}</text>
+            </svg>
+        `
 
-    composites.push({
-        input: Buffer.from(footerSvg),
-        left: 0,
-        top: footerY,
-    })
+        composites.push({
+            input: Buffer.from(footerSvg),
+            left: 0,
+            top: footerY,
+        })
+    }
 
-    // Add stickers/emojis using Twemoji PNG images
+    // Add stickers (both emoji and image types)
     if (stickers && stickers.length > 0) {
-        const stickerSize = Math.round(width * 0.08) // 8% of width for emoji size
+        const baseStickerSize = Math.round(width * 0.06) // 6% of width as base size
         
         for (const sticker of stickers) {
             try {
-                // Convert emoji to Twemoji URL
-                const emojiUrl = getEmojiUrl(sticker.emoji)
+                const stickerBuffer = await fetchStickerImage(sticker)
+                if (!stickerBuffer) continue
                 
-                // Fetch the emoji PNG from Twemoji CDN
-                const response = await fetch(emojiUrl)
-                if (!response.ok) {
-                    console.warn(`[ImageGenerator] Failed to fetch emoji: ${sticker.emoji}`)
-                    continue
-                }
+                // Apply scale to base size
+                const stickerSize = Math.round(baseStickerSize * sticker.scale)
                 
-                const emojiBuffer = Buffer.from(await response.arrayBuffer())
-                
-                // Resize emoji to desired size
-                const resizedEmoji = await sharp(emojiBuffer)
+                // Resize sticker to desired size
+                const resizedSticker = await sharp(stickerBuffer)
                     .resize(stickerSize, stickerSize, {
                         fit: 'contain',
                         background: { r: 0, g: 0, b: 0, alpha: 0 },
@@ -153,17 +218,17 @@ export async function generatePhotoStrip(
                     .png()
                     .toBuffer()
                 
-                // Convert percentage to absolute position
+                // Convert percentage to absolute position (centered on sticker)
                 const stickerX = Math.round((sticker.x / 100) * width) - stickerSize / 2
                 const stickerY = Math.round((sticker.y / 100) * height) - stickerSize / 2
                 
                 composites.push({
-                    input: resizedEmoji,
-                    left: Math.max(0, Math.min(stickerX, width - stickerSize)),
-                    top: Math.max(0, Math.min(stickerY, height - stickerSize)),
+                    input: resizedSticker,
+                    left: Math.max(0, Math.min(Math.round(stickerX), width - stickerSize)),
+                    top: Math.max(0, Math.min(Math.round(stickerY), height - stickerSize)),
                 })
             } catch (e) {
-                console.error(`[ImageGenerator] Failed to add sticker ${sticker.emoji}:`, e)
+                console.error(`[ImageGenerator] Failed to add sticker:`, sticker, e)
             }
         }
         

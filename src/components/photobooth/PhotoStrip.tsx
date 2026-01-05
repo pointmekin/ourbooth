@@ -1,51 +1,61 @@
 import { useRef } from 'react'
-import { usePhotoboothStore } from '@/stores/photobooth-store'
-
-// Convert emoji to Twemoji CDN URL for consistent rendering
-function getEmojiUrl(emoji: string): string {
-  const codePoints = [...emoji]
-    .map(char => char.codePointAt(0)?.toString(16))
-    .filter(Boolean)
-    .join('-')
-  return `https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/72x72/${codePoints}.png`
-}
-
-const LAYOUTS = {
-  '2x2': { cols: 2, rows: 2, count: 4 },
-  '1x4': { cols: 1, rows: 4, count: 4 },
-  '1x3': { cols: 1, rows: 3, count: 3 },
-}
+import { usePhotoboothStore, type StickerType } from '@/stores/photobooth-store'
+import { ResizableSticker } from './ResizableSticker'
 
 interface PhotoStripProps {
   isExporting?: boolean
-  draggingStickerId: number | null
-  onDragStart: (e: React.MouseEvent | React.TouchEvent, id: number) => void
   onFileUpload: (index: number, file: File) => void
 }
 
 export function PhotoStrip({ 
   isExporting = false, 
-  draggingStickerId,
-  onDragStart,
   onFileUpload,
 }: PhotoStripProps) {
   const stripRef = useRef<HTMLDivElement>(null)
-  const { images, stickers, selectedLayout, addSticker } = usePhotoboothStore()
+  const { images, stickers, selectedTemplate, addSticker } = usePhotoboothStore()
   
-  const currentLayout = LAYOUTS[selectedLayout]
+  // Fallback if no template selected
+  if (!selectedTemplate) {
+    return (
+      <div className="flex items-center justify-center w-full h-full text-neutral-500">
+        Please select a template first
+      </div>
+    )
+  }
+
+  const { layout, style, footer } = selectedTemplate
 
   const handleDropIntoCanvas = (e: React.DragEvent) => {
     e.preventDefault()
     if (!stripRef.current) return
 
-    const emoji = e.dataTransfer.getData('emoji')
-    if (!emoji) return
+    // Get sticker data from drag event (new format)
+    const stickerType = e.dataTransfer.getData('sticker-type') as StickerType | ''
+    const stickerSrc = e.dataTransfer.getData('sticker-src')
+    
+    // Fallback for legacy emoji format
+    const legacyEmoji = e.dataTransfer.getData('emoji')
+    
+    if (!stickerType && !legacyEmoji) return
 
     const rect = stripRef.current.getBoundingClientRect()
     const x = Math.min(100, Math.max(0, ((e.clientX - rect.left) / rect.width) * 100))
     const y = Math.min(100, Math.max(0, ((e.clientY - rect.top) / rect.height) * 100))
 
-    addSticker(emoji, x, y)
+    if (stickerType && stickerSrc) {
+      addSticker(stickerSrc, x, y, stickerType)
+    } else if (legacyEmoji) {
+      addSticker(legacyEmoji, x, y, 'emoji')
+    }
+  }
+
+  // Build strip styles from template
+  const stripStyle: React.CSSProperties = {
+    aspectRatio: layout.aspectRatio,
+    background: style.backgroundColor,
+    border: style.borderWidth ? `${style.borderWidth}px solid ${style.borderColor}` : undefined,
+    borderRadius: style.borderRadius,
+    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
   }
 
   return (
@@ -54,13 +64,7 @@ export function PhotoStrip({
         ref={stripRef}
         data-photobooth-strip
         className="flex flex-col relative group select-none shadow-2xl h-full max-h-[calc(100dvh-12rem)] md:max-h-[calc(100dvh-10rem)]"
-        style={{ 
-          aspectRatio: selectedLayout === '1x4' ? '1/4' : '2/3',
-          backgroundColor: '#ffffff',
-          color: '#000000',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', 
-          border: '1px solid rgba(255, 255, 255, 0.1)'
-        }}
+        style={stripStyle}
         onDragOver={(e) => e.preventDefault()}
         onDrop={handleDropIntoCanvas}
       >
@@ -82,13 +86,15 @@ export function PhotoStrip({
         )}
         
         <div 
-          className="flex-1 min-h-0 grid gap-2.5 p-4 box-border relative z-0"
+          className="flex-1 min-h-0 grid box-border relative z-0"
           style={{ 
-            gridTemplateColumns: `repeat(${currentLayout.cols}, minmax(0, 1fr))`,
-            gridTemplateRows: `repeat(${currentLayout.rows}, minmax(0, 1fr))`
+            gridTemplateColumns: `repeat(${layout.cols}, minmax(0, 1fr))`,
+            gridTemplateRows: `repeat(${layout.rows}, minmax(0, 1fr))`,
+            gap: style.gap,
+            padding: style.padding,
           }}
         >
-          {Array.from({ length: currentLayout.count }).map((_, i) => (
+          {Array.from({ length: layout.count }).map((_, i) => (
             <div 
               key={i} 
               className={`w-full h-full relative overflow-hidden ${!isExporting ? 'group/slot cursor-pointer transition-colors' : ''}`}
@@ -117,44 +123,38 @@ export function PhotoStrip({
             </div>
           ))}
           
-          {stickers.map(s => (
-            <div 
-              key={s.id} 
-              onMouseDown={(e) => onDragStart(e, s.id)}
-              onTouchStart={(e) => onDragStart(e, s.id)}
-              className="absolute z-40 drop-shadow-md select-none touch-none"
-              style={{ 
-                left: `${s.x}%`, 
-                top: `${s.y}%`,
-                transform: 'translate(-50%, -50%)',
-                cursor: draggingStickerId === s.id ? 'grabbing' : 'grab',
-              }}
-            >
-              <img 
-                src={getEmojiUrl(s.emoji)} 
-                alt={s.emoji}
-                className="w-10 h-10 pointer-events-none"
-                draggable={false}
-              />
-            </div>
+          {/* Stickers rendered with ResizableSticker component */}
+          {stickers.map(sticker => (
+            <ResizableSticker
+              key={sticker.id}
+              sticker={sticker}
+              isExporting={isExporting}
+              containerRef={stripRef}
+            />
           ))}
         </div>
 
-        <div 
-          className="h-16 flex items-center justify-center relative z-10"
-          style={{ 
-            borderTop: '1px solid #f5f5f5', 
-            backgroundColor: '#ffffff'
-          }}
-        >
-          <span 
-            className="font-mono text-xs tracking-[0.2em] uppercase"
-            style={{ color: '#a3a3a3' }}
+        {footer.text && (
+          <div 
+            className="h-16 flex items-center justify-center relative z-10"
+            style={{ 
+              borderTop: `1px solid ${style.borderColor ?? 'rgba(0,0,0,0.1)'}`,
+            }}
           >
-            OurBooth • 2025
-          </span>
-        </div>
+            <span 
+              className="tracking-[0.15em] uppercase"
+              style={{ 
+                fontFamily: footer.font,
+                color: footer.color,
+                fontSize: footer.size ?? '0.65rem',
+              }}
+            >
+              {footer.text}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   )
 }
+
