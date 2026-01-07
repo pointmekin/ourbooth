@@ -18,6 +18,8 @@ interface GenerateOptions {
     stickers?: Sticker[]
     width?: number
     quality?: number
+    scaleFactor?: number // Multiplier for sticker sizes when exporting at higher res
+    customFooterText?: string // User-provided footer text override
 }
 
 /**
@@ -76,11 +78,14 @@ export async function generatePhotoStrip(
     imageDataUrls: string[],
     options: GenerateOptions
 ): Promise<Buffer> {
-    const { templateId, stickers = [], width = 800, quality = 80 } = options
+    const { templateId, stickers = [], width = 1600, quality = 90, scaleFactor = 1, customFooterText } = options
     
     // Get template configuration
     const template = getTemplateById(templateId) ?? TEMPLATES[0]
     const { layout, style, footer } = template
+    
+    // Use custom footer text if provided, otherwise use template default
+    const displayFooterText = customFooterText ?? footer.text
     
     // Calculate dimensions based on aspect ratio
     const [aspectW, aspectH] = layout.aspectRatio.split('/').map(Number)
@@ -98,10 +103,51 @@ export async function generatePhotoStrip(
     const cellWidth = Math.floor((gridWidth - (layout.cols - 1) * gap) / layout.cols)
     const cellHeight = Math.floor((gridHeight - (layout.rows - 1) * gap) / layout.rows)
 
-    // Parse background color (handle gradients as solid fallback for server)
-    let bgColor = { r: 255, g: 255, b: 255 }
-    if (style.backgroundColor.startsWith('#')) {
-        const hex = style.backgroundColor.slice(1)
+    // Parse background color/gradient for Sharp
+    let bgLayer: sharp.OverlayOptions | null = null
+    let bgColor = { r: 255, g: 255, b: 255 } // Default white
+    
+    const bgStyle = style.backgroundColor
+    
+    if (bgStyle.startsWith('linear-gradient')) {
+        // Parse gradient: extract angle and colors
+        const angleMatch = bgStyle.match(/linear-gradient\((\d+deg)/)
+        const angleDeg = angleMatch ? parseInt(angleMatch[1]) : 180
+        
+        // Extract all colors from the gradient
+        const colorMatches = bgStyle.match(/#[a-fA-F0-9]{6}/g) || []
+        
+        if (colorMatches.length >= 2) {
+            // Convert angle to SVG coordinates
+            const angleRad = (angleDeg - 90) * (Math.PI / 180)
+            const x1 = 50 + 50 * Math.cos(angleRad + Math.PI)
+            const y1 = 50 + 50 * Math.sin(angleRad + Math.PI)
+            const x2 = 50 + 50 * Math.cos(angleRad)
+            const y2 = 50 + 50 * Math.sin(angleRad)
+            
+            // Generate gradient stops for all colors
+            const stops = colorMatches.map((color, index) => {
+                const offset = (index / (colorMatches.length - 1)) * 100
+                return `<stop offset="${offset}%" stop-color="${color}"/>`
+            }).join('\n                            ')
+            
+            const gradientSvg = `
+                <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="bg" x1="${x1}%" y1="${y1}%" x2="${x2}%" y2="${y2}%">
+                            ${stops}
+                        </linearGradient>
+                    </defs>
+                    <rect width="${width}" height="${height}" fill="url(#bg)"/>
+                </svg>
+            `
+            bgLayer = { input: Buffer.from(gradientSvg), left: 0, top: 0 }
+        }
+    } else if (bgStyle.startsWith('rgba') || bgStyle === 'transparent') {
+        // Handle transparent - use white as base
+        bgColor = { r: 255, g: 255, b: 255 }
+    } else if (bgStyle.startsWith('#')) {
+        const hex = bgStyle.slice(1)
         bgColor = {
             r: parseInt(hex.slice(0, 2), 16),
             g: parseInt(hex.slice(2, 4), 16),
@@ -109,7 +155,7 @@ export async function generatePhotoStrip(
         }
     }
 
-    // Create background
+    // Create background canvas
     const canvas = sharp({
         create: {
             width,
@@ -119,8 +165,31 @@ export async function generatePhotoStrip(
         },
     })
 
-    // Prepare composite layers
+    // Prepare composite layers - gradient goes first if present
     const composites: sharp.OverlayOptions[] = []
+    if (bgLayer) {
+        composites.push(bgLayer)
+    }
+    
+    // Add border if specified
+    if (style.borderWidth && style.borderColor) {
+        const borderSvg = `
+            <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+                <rect 
+                    x="${style.borderWidth / 2}" 
+                    y="${style.borderWidth / 2}" 
+                    width="${width - style.borderWidth}" 
+                    height="${height - style.borderWidth}" 
+                    fill="none" 
+                    stroke="${style.borderColor}" 
+                    stroke-width="${style.borderWidth}"
+                    rx="${style.borderRadius ?? 0}"
+                    ry="${style.borderRadius ?? 0}"
+                />
+            </svg>
+        `
+        composites.push({ input: Buffer.from(borderSvg), left: 0, top: 0 })
+    }
 
     // Add images to grid
     for (let i = 0; i < layout.count; i++) {
@@ -138,8 +207,9 @@ export async function generatePhotoStrip(
             const base64Data = dataUrl.replace(/^data:image\/\w+;base64,/, '')
             const imageBuffer = Buffer.from(base64Data, 'base64')
 
-            // Resize and crop to fit cell
+            // Resize and crop to fit cell, auto-rotate based on EXIF orientation
             let resizedImage = await sharp(imageBuffer)
+                .rotate() // Auto-rotate based on EXIF metadata (fixes iPhone rotation)
                 .resize(cellWidth, cellHeight, {
                     fit: 'cover',
                     position: 'center',
@@ -171,9 +241,9 @@ export async function generatePhotoStrip(
     }
 
     // Add footer text if present
-    if (footer.text) {
+    if (displayFooterText) {
         const footerY = height - footerHeight
-        const fontSize = footer.size ? parseInt(footer.size) : 14
+        const fontSize = footer.size ? parseInt(footer.size) * scaleFactor : 14 * scaleFactor
         const footerSvg = `
             <svg width="${width}" height="${footerHeight}" xmlns="http://www.w3.org/2000/svg">
                 <rect x="0" y="0" width="${width}" height="1" fill="#f5f5f5"/>
@@ -186,7 +256,7 @@ export async function generatePhotoStrip(
                     fill="${footer.color}"
                     text-anchor="middle"
                     letter-spacing="2"
-                >${footer.text}</text>
+                >${displayFooterText}</text>
             </svg>
         `
 
@@ -198,16 +268,19 @@ export async function generatePhotoStrip(
     }
 
     // Add stickers (both emoji and image types)
+    // IMPORTANT: Sticker positions are percentages RELATIVE TO THE GRID AREA
+    // The grid area starts at (padding, padding) and has dimensions gridWidth × gridHeight
     if (stickers && stickers.length > 0) {
-        const baseStickerSize = Math.round(width * 0.06) // 6% of width as base size
+        // Client uses BASE_SIZE = 48px. Scale proportionally when exporting at higher res.
+        const clientBaseSize = 48 // matches ResizableSticker.tsx BASE_SIZE
         
         for (const sticker of stickers) {
             try {
                 const stickerBuffer = await fetchStickerImage(sticker)
                 if (!stickerBuffer) continue
                 
-                // Apply scale to base size
-                const stickerSize = Math.round(baseStickerSize * sticker.scale)
+                // Sticker size = client base size * user scale * resolution multiplier
+                const stickerSize = Math.round(clientBaseSize * sticker.scale * scaleFactor)
                 
                 // Resize sticker to desired size
                 const resizedSticker = await sharp(stickerBuffer)
@@ -218,14 +291,19 @@ export async function generatePhotoStrip(
                     .png()
                     .toBuffer()
                 
-                // Convert percentage to absolute position (centered on sticker)
-                const stickerX = Math.round((sticker.x / 100) * width) - stickerSize / 2
-                const stickerY = Math.round((sticker.y / 100) * height) - stickerSize / 2
+                // Convert percentage to absolute position WITHIN THE GRID AREA
+                // sticker.x/y are percentages of the grid area, not the full canvas
+                const gridX = padding + (sticker.x / 100) * gridWidth
+                const gridY = padding + (sticker.y / 100) * gridHeight
+                
+                // Center the sticker on its position
+                const stickerX = Math.round(gridX - stickerSize / 2)
+                const stickerY = Math.round(gridY - stickerSize / 2)
                 
                 composites.push({
                     input: resizedSticker,
-                    left: Math.max(0, Math.min(Math.round(stickerX), width - stickerSize)),
-                    top: Math.max(0, Math.min(Math.round(stickerY), height - stickerSize)),
+                    left: Math.max(0, Math.min(stickerX, width - stickerSize)),
+                    top: Math.max(0, Math.min(stickerY, height - stickerSize)),
                 })
             } catch (e) {
                 console.error(`[ImageGenerator] Failed to add sticker:`, sticker, e)

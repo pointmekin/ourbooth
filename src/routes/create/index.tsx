@@ -10,6 +10,7 @@ import {
   ToolSidebar,
   MobileToolbar,
   TemplateGallery,
+  ExportSheet,
 } from '@/components/photobooth'
 
 export const Route = createFileRoute('/create/')({
@@ -21,6 +22,7 @@ function PhotoboothEditor() {
   
   const [captureMode, setCaptureMode] = useState<'upload' | 'camera'>('upload')
   const [isPropertiesOpen, setIsPropertiesOpen] = useState(false)
+  const [isExportOpen, setIsExportOpen] = useState(false)
 
   // Template selection handler
   const handleTemplateSelect = (template: Template) => {
@@ -58,10 +60,10 @@ function PhotoboothEditor() {
 
       {/* Main Canvas Area */}
       <main className="flex-1 flex flex-col relative overflow-hidden">
-        <PhotoboothHeader />
+        <PhotoboothHeader onExportClick={() => setIsExportOpen(true)} />
 
         {/* Workspace */}
-        <div className="flex-1 flex items-center justify-center p-4 md:p-10 pb-20 md:pb-10 bg-[radial-gradient(ellipse_at_center,var(--tw-gradient-stops))] from-neutral-900 via-neutral-950 to-neutral-950 overflow-auto">
+        <div className="flex-1 flex items-center justify-center p-4 md:p-10 pb-24 md:pb-10 bg-[radial-gradient(ellipse_at_center,var(--tw-gradient-stops))] from-neutral-900 via-neutral-950 to-neutral-950 overflow-auto">
           {captureMode === 'camera' ? (
             <CameraView onClose={() => setCaptureMode('upload')} />
           ) : (
@@ -81,6 +83,13 @@ function PhotoboothEditor() {
         captureMode={captureMode}
         onCaptureModeChange={handleCaptureModeChange}
         onStickersToggle={() => setIsPropertiesOpen(!isPropertiesOpen)}
+        onExportToggle={() => setIsExportOpen(true)}
+      />
+
+      {/* Export Sheet */}
+      <ExportSheet
+        isOpen={isExportOpen}
+        onClose={() => setIsExportOpen(false)}
       />
     </div>
   )

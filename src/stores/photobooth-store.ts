@@ -15,6 +15,13 @@ export interface Sticker {
 }
 
 export type ExportType = 'png' | 'gif'
+export type ExportResolution = 'standard' | 'high' | 'ultra'
+
+export const RESOLUTION_OPTIONS: { value: ExportResolution; label: string; multiplier: number }[] = [
+  { value: 'standard', label: '1x', multiplier: 2 },
+  { value: 'high', label: '2x', multiplier: 4 },
+  { value: 'ultra', label: '4x', multiplier: 6 },
+]
 
 interface PhotoboothState {
   // Template
@@ -35,9 +42,19 @@ interface PhotoboothState {
   bringToFront: (id: number) => void
   removeSticker: (id: number) => void
 
-  // Export type
+  // Export settings
   exportType: ExportType
   setExportType: (type: ExportType) => void
+  exportResolution: ExportResolution
+  setExportResolution: (res: ExportResolution) => void
+
+  // Custom footer text (overrides template default)
+  customFooterText: string
+  setCustomFooterText: (text: string) => void
+
+  // Recently used stickers (for quick access)
+  recentStickers: string[] // stores src of last 8 used
+  addRecentSticker: (src: string) => void
 
   // Reset
   reset: () => void
@@ -49,6 +66,9 @@ const initialState = {
   stickers: [] as Sticker[],
   nextZIndex: 1,
   exportType: 'png' as ExportType,
+  exportResolution: 'high' as ExportResolution,
+  customFooterText: '',
+  recentStickers: [] as string[],
 }
 
 export const usePhotoboothStore = create<PhotoboothState>((set) => ({
@@ -115,6 +135,14 @@ export const usePhotoboothStore = create<PhotoboothState>((set) => ({
     })),
 
   setExportType: (type) => set({ exportType: type }),
+
+  setExportResolution: (res) => set({ exportResolution: res }),
+
+  setCustomFooterText: (text) => set({ customFooterText: text }),
+
+  addRecentSticker: (src) => set((state) => ({
+    recentStickers: [src, ...state.recentStickers.filter(s => s !== src)].slice(0, 8)
+  })),
 
   reset: () => set(initialState),
 }))

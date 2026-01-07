@@ -18,6 +18,10 @@ interface ExportInput {
     templateId: string
     stickers?: ExportSticker[]
     exportType: 'png' | 'gif'
+    previewWidth?: number  // Actual preview width for pixel-perfect export
+    previewHeight?: number // Actual preview height for pixel-perfect export
+    scaleFactor?: number   // Resolution multiplier (1x, 2x, 4x)
+    customFooterText?: string // User-provided footer text
 }
 
 export const exportPhotoboothFn = createServerFn({ method: 'POST' })
@@ -64,10 +68,20 @@ export const exportPhotoboothFn = createServerFn({ method: 'POST' })
                 throw new Error("No images provided")
             }
 
-            console.log(`[Export] Generating ${exportType} for user ${userId}, template: ${templateId}, images: ${validImages.length}`)
+            console.log(`[Export] Generating ${exportType} for user ${userId}, template: ${templateId}, images: ${validImages.length}, scaleFactor: ${data.scaleFactor}`)
 
-            // Generate the image
-            const imageBuffer = await generatePhotoStrip(validImages, { templateId, stickers })
+            // Use client-specified scale factor or default to 4x
+            const scaleFactor = data.scaleFactor ?? 4
+            const exportWidth = (data.previewWidth ?? 400) * scaleFactor
+
+            // Generate the image at higher resolution
+            const imageBuffer = await generatePhotoStrip(validImages, { 
+                templateId, 
+                stickers,
+                width: exportWidth,
+                scaleFactor,
+                customFooterText: data.customFooterText,
+            })
             const contentType = 'image/png'
             const fileExtension = 'png'
 

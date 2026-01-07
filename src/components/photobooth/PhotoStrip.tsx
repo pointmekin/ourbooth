@@ -12,7 +12,7 @@ export function PhotoStrip({
   onFileUpload,
 }: PhotoStripProps) {
   const stripRef = useRef<HTMLDivElement>(null)
-  const { images, stickers, selectedTemplate, addSticker } = usePhotoboothStore()
+  const { images, stickers, selectedTemplate, customFooterText, addSticker } = usePhotoboothStore()
   
   // Fallback if no template selected
   if (!selectedTemplate) {
@@ -24,6 +24,9 @@ export function PhotoStrip({
   }
 
   const { layout, style, footer } = selectedTemplate
+  
+  // Use custom footer text if provided, otherwise use template default
+  const displayFooterText = customFooterText || footer.text
 
   const handleDropIntoCanvas = (e: React.DragEvent) => {
     e.preventDefault()
@@ -134,7 +137,7 @@ export function PhotoStrip({
           ))}
         </div>
 
-        {footer.text && (
+        {displayFooterText && (
           <div 
             className="h-16 flex items-center justify-center relative z-10"
             style={{ 
@@ -149,7 +152,7 @@ export function PhotoStrip({
                 fontSize: footer.size ?? '0.65rem',
               }}
             >
-              {footer.text}
+              {displayFooterText}
             </span>
           </div>
         )}

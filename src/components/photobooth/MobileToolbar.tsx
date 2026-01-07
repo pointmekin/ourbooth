@@ -1,69 +1,66 @@
-import { useNavigate } from '@tanstack/react-router'
-import { Upload, Smile, LogIn, LogOut, Camera, LucideIcon } from 'lucide-react'
-import { authClient } from '@/lib/auth-client'
+import { Upload, Sparkles, Download, Camera } from 'lucide-react'
 
 interface MobileToolbarProps {
   captureMode: 'upload' | 'camera'
   onCaptureModeChange: (mode: 'upload' | 'camera') => void
   onStickersToggle: () => void
-}
-
-function ToolIcon({ 
-  icon: Icon, 
-  active, 
-  onClick 
-}: { 
-  icon: LucideIcon
-  active?: boolean
-  onClick?: () => void
-}) {
-  return (
-    <div 
-      onClick={onClick}
-      className={`w-10 h-10 rounded-xl flex items-center justify-center cursor-pointer transition-all duration-300 ${active ? 'bg-white text-black shadow-[0_0_15px_-3px_rgba(255,255,255,0.3)]' : 'hover:bg-white/10 text-neutral-500 hover:text-white'}`}
-    >
-      <Icon className="w-5 h-5 opacity-80" />
-    </div>
-  )
+  onExportToggle: () => void
 }
 
 export function MobileToolbar({ 
   captureMode, 
   onCaptureModeChange, 
-  onStickersToggle 
+  onStickersToggle,
+  onExportToggle
 }: MobileToolbarProps) {
-  const navigate = useNavigate()
-  const { data: session } = authClient.useSession()
-
-  const handleAuthAction = async () => {
-    if (session) {
-      await authClient.signOut()
-      window.location.reload()
-    } else {
-      navigate({ to: '/auth/signin' })
-    }
+  
+  // Toggle between upload and camera modes
+  const handleModeToggle = () => {
+    onCaptureModeChange(captureMode === 'upload' ? 'camera' : 'upload')
   }
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-neutral-950/95 backdrop-blur-xl border-t border-white/10 flex justify-around py-3 px-4 safe-area-inset-bottom">
-      <ToolIcon 
-        icon={Upload} 
-        active={captureMode === 'upload'} 
-        onClick={() => onCaptureModeChange('upload')} 
-      />
-      <ToolIcon 
-        icon={Camera} 
-        active={captureMode === 'camera'} 
-        onClick={() => onCaptureModeChange('camera')} 
-      />
-      <ToolIcon 
-        icon={Smile} 
-        onClick={onStickersToggle} 
-      />
-      <ToolIcon 
-        icon={session ? LogOut : LogIn} 
-        onClick={handleAuthAction}
-      />
+    <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-neutral-950/95 backdrop-blur-xl border-t border-white/10 safe-area-inset-bottom">
+      <div className="flex items-center justify-around py-3 px-6">
+        {/* Capture Mode Toggle */}
+        <button
+          onClick={handleModeToggle}
+          className="flex flex-col items-center gap-1 text-neutral-400 hover:text-white transition-colors"
+        >
+          <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center">
+            {captureMode === 'upload' ? (
+              <Upload className="w-5 h-5" />
+            ) : (
+              <Camera className="w-5 h-5" />
+            )}
+          </div>
+          <span className="text-[10px] font-medium uppercase tracking-wider">
+            {captureMode === 'upload' ? 'Upload' : 'Camera'}
+          </span>
+        </button>
+
+        {/* Decorate Button */}
+        <button
+          onClick={onStickersToggle}
+          className="flex flex-col items-center gap-1 text-neutral-400 hover:text-white transition-colors"
+        >
+          <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center">
+            <Sparkles className="w-5 h-5" />
+          </div>
+          <span className="text-[10px] font-medium uppercase tracking-wider">Decorate</span>
+        </button>
+
+        {/* Export Button - Prominent */}
+        <button
+          onClick={onExportToggle}
+          className="flex flex-col items-center gap-1"
+        >
+          <div className="w-14 h-14 rounded-full bg-rose-600 flex items-center justify-center shadow-[0_0_20px_-5px_rgba(225,29,72,0.6)]">
+            <Download className="w-6 h-6 text-white" />
+          </div>
+          <span className="text-[10px] font-medium uppercase tracking-wider text-rose-400">Export</span>
+        </button>
+      </div>
     </div>
   )
 }
