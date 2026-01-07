@@ -54,8 +54,6 @@ function PhotoboothEditor() {
       <ToolSidebar
         captureMode={captureMode}
         onCaptureModeChange={handleCaptureModeChange}
-        isPropertiesOpen={isPropertiesOpen}
-        onPropertiesToggle={() => setIsPropertiesOpen(!isPropertiesOpen)}
       />
 
       {/* Main Canvas Area */}

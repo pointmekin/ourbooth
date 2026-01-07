@@ -1,12 +1,10 @@
 import { Link, useNavigate } from '@tanstack/react-router'
-import { LayoutGrid, Upload, Smile, Wand2, LogIn, LogOut, Camera, ImageIcon, LucideIcon } from 'lucide-react'
+import { Upload, Smile, Wand2, LogIn, LogOut, Camera, ImageIcon, LucideIcon } from 'lucide-react'
 import { authClient } from '@/lib/auth-client'
 
 interface ToolSidebarProps {
   captureMode: 'upload' | 'camera'
   onCaptureModeChange: (mode: 'upload' | 'camera') => void
-  isPropertiesOpen: boolean
-  onPropertiesToggle: () => void
 }
 
 function ToolIcon({ 
@@ -37,9 +35,7 @@ function ToolIcon({
 
 export function ToolSidebar({ 
   captureMode, 
-  onCaptureModeChange, 
-  isPropertiesOpen, 
-  onPropertiesToggle 
+  onCaptureModeChange
 }: ToolSidebarProps) {
   const navigate = useNavigate()
   const { data: session } = authClient.useSession()
@@ -55,13 +51,6 @@ export function ToolSidebar({
 
   return (
     <aside className="hidden md:flex w-20 border-r border-white/5 flex-col items-center py-6 gap-6 z-30 bg-neutral-950/80 backdrop-blur-xl">
-      <ToolIcon 
-        label="Menu" 
-        icon={LayoutGrid} 
-        active={isPropertiesOpen} 
-        onClick={onPropertiesToggle} 
-      />
-      
       <div className="flex space-y-6 w-full flex-col items-center">
         <ToolIcon 
           label="Upload Mode" 
