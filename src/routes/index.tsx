@@ -1,10 +1,22 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { useEffect } from 'react'
+import { authClient } from '@/lib/auth-client'
 
 export const Route = createFileRoute('/')({
   component: LandingPage,
 })
 
 function LandingPage() {
+  const navigate = useNavigate()
+  const { data: session, isPending } = authClient.useSession()
+
+  // Redirect signed-in users directly to /create
+  useEffect(() => {
+    if (!isPending && session) {
+      navigate({ to: '/create' })
+    }
+  }, [session, isPending, navigate])
+
   return (
     <div className="min-h-screen bg-black text-white font-sans selection:bg-rose-500/30 overflow-x-hidden">
       {/* Navigation */}

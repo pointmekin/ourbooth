@@ -2,8 +2,8 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 import { usePhotoboothStore } from '@/stores/photobooth-store'
 import { type Template } from '@/data/templates'
+import { AppHeader } from '@/components/AppHeader'
 import {
-  PhotoboothHeader,
   PhotoStrip,
   CameraView,
   PropertiesPanel,
@@ -58,7 +58,12 @@ function PhotoboothEditor() {
 
       {/* Main Canvas Area */}
       <main className="flex-1 flex flex-col relative overflow-hidden">
-        <PhotoboothHeader onExportClick={() => setIsExportOpen(true)} />
+        <AppHeader 
+          showExport
+          onExportClick={() => setIsExportOpen(true)} 
+          showBackToTemplates
+          onBackToTemplates={() => setTemplate(null)}
+        />
 
         {/* Workspace */}
         <div className="flex-1 flex items-center justify-center p-4 md:p-10 pb-24 md:pb-10 bg-[radial-gradient(ellipse_at_center,var(--tw-gradient-stops))] from-neutral-900 via-neutral-950 to-neutral-950 overflow-auto">
