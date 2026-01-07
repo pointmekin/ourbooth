@@ -4,7 +4,8 @@ import { authClient } from '@/lib/auth-client'
 import { getUserPhotosFn, deleteUserPhotoFn } from '@/server/photos'
 import { toast } from "sonner"
 import { Button } from '@/components/ui/button'
-import { Download, Trash2, ArrowLeft, ImageIcon, Loader2 } from 'lucide-react'
+import { AppHeader } from '@/components/AppHeader'
+import { Download, Trash2, ImageIcon, Loader2 } from 'lucide-react'
 
 export const Route = createFileRoute('/photos/')({
     component: MyPhotosPage,
@@ -102,23 +103,19 @@ function MyPhotosPage() {
     return (
         <div className="min-h-dvh bg-neutral-950 text-neutral-100 font-sans">
             {/* Header */}
-            <header className="h-16 border-b border-white/5 flex items-center justify-between px-4 md:px-8 bg-neutral-950/80 backdrop-blur-md sticky top-0 z-50">
-                <div className="flex items-center gap-4">
+            <AppHeader />
+
+            {/* Page Title */}
+            <div className="border-b border-white/5 bg-neutral-950/50">
+                <div className="max-w-6xl mx-auto px-4 py-6 flex items-center justify-between">
+                    <h1 className="text-2xl font-bold">My Photos</h1>
                     <Link to="/create">
-                        <Button variant="ghost" size="icon" className="text-neutral-400 hover:text-white">
-                            <ArrowLeft className="w-5 h-5" />
+                        <Button className="bg-rose-600 hover:bg-rose-500 text-white rounded-full font-semibold px-6">
+                            Create New
                         </Button>
                     </Link>
-                    <h1 className="text-xl font-bold tracking-tighter bg-linear-to-br from-white to-white/50 bg-clip-text text-transparent">
-                        My Photos
-                    </h1>
                 </div>
-                <Link to="/create">
-                    <Button className="bg-rose-600 hover:bg-rose-500 text-white rounded-full font-semibold px-6">
-                        Create New
-                    </Button>
-                </Link>
-            </header>
+            </div>
 
             {/* Content */}
             <main className="max-w-6xl mx-auto px-4 py-8">

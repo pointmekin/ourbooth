@@ -26,7 +26,7 @@ export const RESOLUTION_OPTIONS: { value: ExportResolution; label: string; multi
 interface PhotoboothState {
   // Template
   selectedTemplate: Template | null
-  setTemplate: (template: Template) => void
+  setTemplate: (template: Template | null) => void
 
   // Images
   images: (string | null)[]
@@ -76,7 +76,7 @@ export const usePhotoboothStore = create<PhotoboothState>((set) => ({
 
   setTemplate: (template) => set({ 
     selectedTemplate: template,
-    images: Array(template.layout.count).fill(null),
+    images: template ? Array(template.layout.count).fill(null) : Array(4).fill(null),
     stickers: [],
     nextZIndex: 1,
   }),

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { TEMPLATES, TEMPLATE_CATEGORIES, type Template, type TemplateCategory } from '@/data/templates'
+import { AppHeader } from '@/components/AppHeader'
 
 interface TemplateGalleryProps {
   onSelect: (template: Template) => void
@@ -13,56 +14,60 @@ export function TemplateGallery({ onSelect }: TemplateGalleryProps) {
     : TEMPLATES.filter(t => t.category === activeCategory)
 
   return (
-    <div className="min-h-dvh bg-neutral-950 text-white p-4 md:p-8">
-      {/* Header */}
-      <div className="max-w-6xl mx-auto mb-8">
-        <h1 className="text-3xl md:text-5xl font-black tracking-tighter mb-2">
-          Choose Your Template
-        </h1>
-        <p className="text-neutral-400 text-lg">
-          Select a style for your photo booth strip
-        </p>
-      </div>
+    <div className="min-h-dvh bg-neutral-950 text-white flex flex-col">
+      <AppHeader />
+      
+      <div className="flex-1 p-4 md:p-8 overflow-auto">
+        {/* Page Header */}
+        <div className="max-w-6xl mx-auto mb-8">
+          <h1 className="text-3xl md:text-5xl font-black tracking-tighter mb-2">
+            Choose Your Template
+          </h1>
+          <p className="text-neutral-400 text-lg">
+            Select a style for your photo booth strip
+          </p>
+        </div>
 
-      {/* Category Tabs */}
-      <div className="max-w-6xl mx-auto mb-8 overflow-x-auto">
-        <div className="flex gap-2 pb-2">
-          <button
-            onClick={() => setActiveCategory('all')}
-            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-              activeCategory === 'all'
-                ? 'bg-white text-black'
-                : 'bg-white/10 text-white hover:bg-white/20'
-            }`}
-          >
-            All Templates
-          </button>
-          {TEMPLATE_CATEGORIES.map(cat => (
+        {/* Category Tabs */}
+        <div className="max-w-6xl mx-auto mb-8 overflow-x-auto">
+          <div className="flex gap-2 pb-2">
             <button
-              key={cat.id}
-              onClick={() => setActiveCategory(cat.id)}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all flex items-center gap-2 ${
-                activeCategory === cat.id
+              onClick={() => setActiveCategory('all')}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                activeCategory === 'all'
                   ? 'bg-white text-black'
                   : 'bg-white/10 text-white hover:bg-white/20'
               }`}
             >
-              <span>{cat.icon}</span>
-              {cat.label}
+              All Templates
             </button>
+            {TEMPLATE_CATEGORIES.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategory(cat.id)}
+                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all flex items-center gap-2 ${
+                  activeCategory === cat.id
+                    ? 'bg-white text-black'
+                    : 'bg-white/10 text-white hover:bg-white/20'
+                }`}
+              >
+                <span>{cat.icon}</span>
+                {cat.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Template Grid */}
+        <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+          {filteredTemplates.map(template => (
+            <TemplateCard
+              key={template.id}
+              template={template}
+              onSelect={() => onSelect(template)}
+            />
           ))}
         </div>
-      </div>
-
-      {/* Template Grid */}
-      <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-        {filteredTemplates.map(template => (
-          <TemplateCard
-            key={template.id}
-            template={template}
-            onSelect={() => onSelect(template)}
-          />
-        ))}
       </div>
     </div>
   )
