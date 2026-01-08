@@ -1,6 +1,13 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { useEffect } from 'react'
 import { authClient } from '@/lib/auth-client'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { ImageIcon, LogOut } from 'lucide-react'
 
 export const Route = createFileRoute('/')({
   component: LandingPage,
@@ -8,14 +15,12 @@ export const Route = createFileRoute('/')({
 
 function LandingPage() {
   const navigate = useNavigate()
-  const { data: session, isPending } = authClient.useSession()
+  const { data: session } = authClient.useSession()
 
-  // Redirect signed-in users directly to /create
-  useEffect(() => {
-    if (!isPending && session) {
-      navigate({ to: '/create' })
-    }
-  }, [session, isPending, navigate])
+  const handleSignOut = async () => {
+      await authClient.signOut()
+      window.location.reload()
+  }
 
   return (
     <div className="min-h-screen bg-black text-white font-sans selection:bg-rose-500/30 overflow-x-hidden">
@@ -28,9 +33,46 @@ function LandingPage() {
             <span className="cursor-pointer hover:text-rose-500 transition-colors">Physical</span>
             <span className="cursor-pointer hover:text-rose-500 transition-colors">Pricing</span>
         </div>
-        <Link to="/auth/signin" className="text-sm font-bold border border-white px-4 py-2 hover:bg-white hover:text-black transition-colors rounded-full">
+        
+        {session ? (
+            <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <button className="w-10 h-10 rounded-full overflow-hidden border border-white hover:border-white/80 transition-colors">
+                {session.user.image ? (
+                    <img src={session.user.image} alt="" className="w-full h-full object-cover" />
+                ) : (
+                    <div className="w-full h-full bg-rose-500 flex items-center justify-center font-bold text-sm text-white">
+                    {session.user.name?.charAt(0).toUpperCase()}
+                    </div>
+                )}
+                </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48 bg-neutral-900 border-white/10 text-white z-[60]">
+                <div className="px-3 py-2 text-sm text-neutral-400">
+                {session.user.name || session.user.email}
+                </div>
+                <DropdownMenuSeparator className="bg-white/10" />
+                <DropdownMenuItem asChild className="cursor-pointer bg-transparent focus:bg-white/10 focus:text-white">
+                <Link to="/photos" className="flex items-center gap-2">
+                    <ImageIcon className="w-4 h-4" />
+                    My Photos
+                </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-white/10" />
+                <DropdownMenuItem 
+                onClick={handleSignOut}
+                className="cursor-pointer text-red-400 focus:text-red-400 focus:bg-white/10"
+                >
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+            </DropdownMenu>
+        ) : (
+            <Link to="/auth/signin" className="text-sm font-bold border border-white px-4 py-2 hover:bg-white hover:text-black transition-colors rounded-full">
             SIGN IN
-        </Link>
+            </Link>
+        )}
       </nav>
 
       {/* Hero Section */}

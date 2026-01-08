@@ -13,6 +13,8 @@ import {
   ExportSheet,
 } from '@/components/photobooth'
 
+import { Photobooth3DExperience } from '@/components/3d/Experience'
+
 export const Route = createFileRoute('/create/')({
   component: PhotoboothEditor,
 })
@@ -20,6 +22,7 @@ export const Route = createFileRoute('/create/')({
 function PhotoboothEditor() {
   const { selectedTemplate, setTemplate, setImage } = usePhotoboothStore()
   
+  const [hasStarted, setHasStarted] = useState(false)
   const [captureMode, setCaptureMode] = useState<'upload' | 'camera'>('upload')
   const [isPropertiesOpen, setIsPropertiesOpen] = useState(false)
   const [isExportOpen, setIsExportOpen] = useState(false)
@@ -42,7 +45,12 @@ function PhotoboothEditor() {
     setCaptureMode(mode)
   }
 
-  // Show template gallery if no template selected
+  // 1. Show 3D Experience first
+  if (!hasStarted) {
+    return <Photobooth3DExperience onComplete={() => setHasStarted(true)} />
+  }
+
+  // 2. Show template gallery if no template selected (and started)
   if (!selectedTemplate) {
     return <TemplateGallery onSelect={handleTemplateSelect} />
   }
