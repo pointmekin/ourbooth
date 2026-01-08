@@ -2,12 +2,15 @@
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, useGLTF, Environment, ContactShadows, Float } from '@react-three/drei'
 import { Suspense } from 'react'
-import glbUrl from '@/3d/myphotobooth.glb?url' // Assuming usage of vite alias or relative import support
+import glbUrl from '@/3d/myphotobooth-draco.glb?url'
 
 function Model() {
   const { scene } = useGLTF(glbUrl)
   return <primitive object={scene} scale={2} position={[0, -1, 0]} />
 }
+
+// Preload the model
+useGLTF.preload(glbUrl)
 
 export function Photobooth3DExperience({ onComplete }: { onComplete: () => void }) {
   return (

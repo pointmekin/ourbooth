@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { authClient } from '@/lib/auth-client'
 import {
   DropdownMenu,
@@ -14,7 +14,6 @@ export const Route = createFileRoute('/')({
 })
 
 function LandingPage() {
-  const navigate = useNavigate()
   const { data: session } = authClient.useSession()
 
   const handleSignOut = async () => {
@@ -47,7 +46,7 @@ function LandingPage() {
                 )}
                 </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48 bg-neutral-900 border-white/10 text-white z-[60]">
+            <DropdownMenuContent align="end" className="w-48 bg-neutral-900 border-white/10 text-white z-60">
                 <div className="px-3 py-2 text-sm text-neutral-400">
                 {session.user.name || session.user.email}
                 </div>
