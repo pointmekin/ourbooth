@@ -3,7 +3,7 @@ import { useState, FormEvent } from "react";
 import { authClient } from "@/lib/auth-client";
 import {
   Loader2,
-  Mail,
+ Mail,
   Lock,
   ArrowRight,
   CheckCircle2,
@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { signInSchema, SignInFormData } from "@/lib/validations/auth";
+import { z } from "zod";
 
 export const Route = createFileRoute("/auth/signin")({
   component: SignIn,
@@ -32,32 +34,39 @@ function SignIn() {
   const [errors, setErrors] = useState<FormErrors>({});
   const navigate = useNavigate();
 
-  // Validation helpers
-  const validateEmail = (email: string): string | undefined => {
-    if (!email) return "Email is required";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return "Please enter a valid email address";
+  // Validate a single field using Zod
+  const validateField = (field: keyof SignInFormData, value: string): string | undefined => {
+    try {
+      const schema = field === "email" 
+        ? signInSchema.shape.email 
+        : signInSchema.shape.password;
+      schema.parse(value);
+      return undefined;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return error.issues[0]?.message;
+      }
+      return undefined;
     }
-    return undefined;
-  };
-
-  const validatePassword = (password: string): string | undefined => {
-    if (!password) return "Password is required";
-    if (password.length < 6) return "Password must be at least 6 characters";
-    return undefined;
   };
 
   const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
+    const result = signInSchema.safeParse({ email, password });
 
-    const emailError = validateEmail(email);
-    const passwordError = validatePassword(password);
+    if (!result.success) {
+      const newErrors: FormErrors = {};
+      result.error.issues.forEach((issue) => {
+        const field = issue.path[0] as keyof FormErrors;
+        if (field) {
+          newErrors[field] = issue.message;
+        }
+      });
+      setErrors(newErrors);
+      return false;
+    }
 
-    if (emailError) newErrors.email = emailError;
-    if (passwordError) newErrors.password = passwordError;
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    setErrors({});
+    return true;
   };
 
   const handleSignIn = async (e: FormEvent<HTMLFormElement>) => {
@@ -166,7 +175,7 @@ function SignIn() {
 
       <div className="w-full max-w-md z-10">
         {/* Header */}
-        <div className="mb-10 text-center space-y-2 animate-in slide-in-from-top duration-700">
+        <div className="mb-10 text-center space-y-2 animate-in fade-in duration-300">
           <Link
             to="/"
             className="text-2xl font-bold tracking-tighter inline-block mb-2 hover:text-rose-400 transition-colors"
@@ -180,7 +189,7 @@ function SignIn() {
         </div>
 
         {/* Form Container */}
-        <div className="space-y-4 bg-neutral-950/50 backdrop-blur-xl border border-white/5 p-8 rounded-2xl shadow-2xl animate-in slide-in-from-bottom duration-700">
+        <div className="space-y-4 bg-neutral-950/50 backdrop-blur-xl border border-white/5 p-8 rounded-2xl shadow-2xl animate-in fade-in duration-300">
           {/* Google Sign In */}
           <Button
             type="button"
@@ -248,7 +257,7 @@ function SignIn() {
                     }
                   }}
                   onBlur={() => {
-                    const error = validateEmail(email);
+                    const error = validateField("email", email);
                     if (error) {
                       setErrors((prev) => ({ ...prev, email: error }));
                     }
@@ -272,7 +281,7 @@ function SignIn() {
               {errors.email && (
                 <p
                   id="email-error"
-                  className="text-sm text-red-400 flex items-center gap-1.5 animate-in slide-in-from-left duration-200"
+                  className="text-sm text-red-400 flex items-center gap-1.5 animate-in fade-in duration-200"
                   role="alert"
                 >
                   <AlertCircle className="w-4 h-4" aria-hidden="true" />
@@ -303,7 +312,7 @@ function SignIn() {
                     }
                   }}
                   onBlur={() => {
-                    const error = validatePassword(password);
+                    const error = validateField("password", password);
                     if (error) {
                       setErrors((prev) => ({ ...prev, password: error }));
                     }
@@ -329,7 +338,7 @@ function SignIn() {
               {errors.password && (
                 <p
                   id="password-error"
-                  className="text-sm text-red-400 flex items-center gap-1.5 animate-in slide-in-from-left duration-200"
+                  className="text-sm text-red-400 flex items-center gap-1.5 animate-in fade-in duration-200"
                   role="alert"
                 >
                   <AlertCircle className="w-4 h-4" aria-hidden="true" />
@@ -360,7 +369,7 @@ function SignIn() {
         </div>
 
         {/* Footer */}
-        <p className="text-center mt-8 text-neutral-500 animate-in fade-in duration-1000 delay-300">
+        <p className="text-center mt-8 text-neutral-500">
           Don't have an account?{" "}
           <Link
             to="/auth/signup"
