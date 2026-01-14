@@ -68,8 +68,8 @@ export function PropertiesPanel({ isOpen, onClose }: PropertiesPanelProps) {
       <aside 
         ref={panelRef}
         className={`
-          fixed inset-y-0 right-0 z-40 w-80 bg-neutral-950/95 backdrop-blur-xl border-l border-white/5 p-6 overflow-y-auto transition-transform duration-300 ease-in-out
-          lg:relative lg:translate-x-0 lg:block lg:bg-neutral-950/50
+          fixed top-14 bottom-0 right-0 z-40 w-80 bg-neutral-950/95 backdrop-blur-xl border-l border-white/5 p-6 pb-24 overflow-y-auto transition-transform duration-300 ease-in-out
+          lg:relative lg:top-0 lg:inset-y-0 lg:translate-x-0 lg:block lg:bg-neutral-950/50 lg:pb-6
           ${isOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}
         `}
       >
