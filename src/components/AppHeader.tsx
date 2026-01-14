@@ -26,7 +26,7 @@ export function AppHeader({
   onBackToTemplates
 }: AppHeaderProps) {
   const navigate = useNavigate()
-  const { data: session } = authClient.useSession()
+  const { data: session, isPending } = authClient.useSession()
 
   const handleSignOut = async () => {
     await authClient.signOut()
@@ -74,7 +74,9 @@ export function AppHeader({
       
       <div className="flex items-center gap-2 md:gap-3">
         {/* User menu - visible on all sizes */}
-        {session ? (
+        {isPending ? (
+          <div className="w-8 h-8 rounded-full bg-white/10 animate-pulse" />
+        ) : session ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="w-8 h-8 rounded-full overflow-hidden border-2 border-white/20 hover:border-white/40 transition-colors">
