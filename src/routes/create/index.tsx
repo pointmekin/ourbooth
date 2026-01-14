@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { usePhotoboothStore } from '@/stores/photobooth-store'
 import { type Template } from '@/data/templates'
 import { AppHeader } from '@/components/AppHeader'
@@ -31,6 +31,14 @@ function PhotoboothEditor() {
   const [isPropertiesOpen, setIsPropertiesOpen] = useState(false)
   const [isExportOpen, setIsExportOpen] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('fit')
+  // Unique key to force 3D experience remount on browser navigation
+  const [experienceKey, setExperienceKey] = useState(() => Date.now())
+
+  // Reset to 3D experience when component mounts (handles browser back/forward)
+  useEffect(() => {
+    setHasStarted(false)
+    setExperienceKey(Date.now()) // Force fresh 3D canvas
+  }, [])
 
   // Template selection handler
   const handleTemplateSelect = (template: Template) => {
@@ -52,7 +60,7 @@ function PhotoboothEditor() {
 
   // 1. Show 3D Experience first
   if (!hasStarted) {
-    return <Photobooth3DExperience onComplete={() => setHasStarted(true)} />
+    return <Photobooth3DExperience key={experienceKey} onComplete={() => setHasStarted(true)} />
   }
 
   // 2. Show template gallery if no template selected (and started)
