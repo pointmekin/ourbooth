@@ -4,10 +4,26 @@ import { Timer, X, RefreshCcw, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { usePhotoboothStore } from '@/stores/photobooth-store'
 
+// Default slot aspect ratio if no template
+const DEFAULT_SLOT_ASPECT = '3/4'
+
 type SessionState = 'idle' | 'countdown' | 'capturing' | 'reviewing'
 
 interface CameraViewProps {
   onClose: () => void
+}
+
+// Calculate the aspect ratio of each photo SLOT (not the overall template)
+// Template aspect = W:H, Grid = cols x rows
+// Slot aspect = (W * rows) : (H * cols)
+function calculateSlotAspectRatio(templateAspect: string, cols: number, rows: number): string {
+  const [w, h] = templateAspect.split('/').map(Number)
+  const slotW = w * rows
+  const slotH = h * cols
+  // Simplify by finding GCD
+  const gcd = (a: number, b: number): number => b === 0 ? a : gcd(b, a % b)
+  const divisor = gcd(slotW, slotH)
+  return `${slotW / divisor}/${slotH / divisor}`
 }
 
 export function CameraView({ onClose }: CameraViewProps) {
@@ -20,7 +36,16 @@ export function CameraView({ onClose }: CameraViewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
 
-  const { setImages } = usePhotoboothStore()
+  const { setImages, selectedTemplate } = usePhotoboothStore()
+  
+  // Calculate the slot aspect ratio (what each photo placeholder looks like)
+  const slotAspectRatio = selectedTemplate 
+    ? calculateSlotAspectRatio(
+        selectedTemplate.layout.aspectRatio,
+        selectedTemplate.layout.cols,
+        selectedTemplate.layout.rows
+      )
+    : DEFAULT_SLOT_ASPECT
 
   const startCamera = async () => {
     if (streamRef.current?.active) {
@@ -203,7 +228,10 @@ export function CameraView({ onClose }: CameraViewProps) {
   }
 
   return (
-    <div className="relative w-full max-w-2xl max-h-[50dvh] md:max-h-none aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl border border-white/10 group">
+    <div 
+      className="relative w-full max-w-md max-h-[70dvh] md:max-h-[75vh] bg-black rounded-3xl overflow-hidden shadow-2xl border border-white/10 group"
+      style={{ aspectRatio: slotAspectRatio }}
+    >
       <video 
         ref={videoRef} 
         autoPlay 

@@ -2,14 +2,18 @@ import { useRef } from 'react'
 import { usePhotoboothStore, type StickerType } from '@/stores/photobooth-store'
 import { ResizableSticker } from './ResizableSticker'
 
+type ViewMode = 'fit' | 'scroll'
+
 interface PhotoStripProps {
   isExporting?: boolean
   onFileUpload: (index: number, file: File) => void
+  viewMode?: ViewMode
 }
 
 export function PhotoStrip({ 
   isExporting = false, 
   onFileUpload,
+  viewMode = 'fit',
 }: PhotoStripProps) {
   const stripRef = useRef<HTMLDivElement>(null)
   const { images, stickers, selectedTemplate, customFooterText, addSticker } = usePhotoboothStore()
@@ -61,12 +65,19 @@ export function PhotoStrip({
     boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
   }
 
+  // Conditional classes based on view mode
+  // Fit mode: constrain to available height, let width follow aspect ratio
+  // Scroll mode: use larger size, allow scrolling
+  const stripClasses = viewMode === 'fit'
+    ? 'flex flex-col relative group select-none shadow-2xl h-full max-h-[calc(100dvh-10rem)] md:max-h-[calc(100dvh-8rem)]'
+    : 'flex flex-col relative group select-none shadow-2xl min-h-[600px] md:min-h-[800px]'
+
   return (
-    <div className="flex items-center justify-center w-full h-full">
+    <div className={`flex items-center justify-center w-full ${viewMode === 'fit' ? 'h-full' : 'min-h-full py-8'}`}>
       <div 
         ref={stripRef}
         data-photobooth-strip
-        className="flex flex-col relative group select-none shadow-2xl h-full max-h-[calc(100dvh-12rem)] md:max-h-[calc(100dvh-10rem)]"
+        className={stripClasses}
         style={stripStyle}
         onDragOver={(e) => e.preventDefault()}
         onDrop={handleDropIntoCanvas}
