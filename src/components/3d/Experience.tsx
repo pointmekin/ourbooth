@@ -1,12 +1,34 @@
 
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, useGLTF, Environment, ContactShadows, Float } from '@react-three/drei'
-import { Suspense } from 'react'
+import { Suspense, useEffect, useMemo } from 'react'
 import glbUrl from '@/3d/myphotobooth-draco.glb?url'
 
 function Model() {
   const { scene } = useGLTF(glbUrl)
-  return <primitive object={scene} scale={2} position={[0, -1, 0]} />
+  
+  // Clone the scene so disposal doesn't corrupt the cached original
+  const clonedScene = useMemo(() => scene.clone(), [scene])
+  
+  // Cleanup cloned scene on unmount
+  useEffect(() => {
+    return () => {
+      clonedScene.traverse((object: any) => {
+        if (object.geometry) {
+          object.geometry.dispose()
+        }
+        if (object.material) {
+          if (Array.isArray(object.material)) {
+            object.material.forEach((material: any) => material.dispose())
+          } else {
+            object.material.dispose()
+          }
+        }
+      })
+    }
+  }, [clonedScene])
+  
+  return <primitive object={clonedScene} scale={2} position={[0, -1, 0]} />
 }
 
 // Preload the model
