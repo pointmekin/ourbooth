@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { signInSchema, SignInFormData } from "@/lib/validations/auth";
 import { z } from "zod";
 
@@ -226,11 +227,11 @@ function SignIn() {
 
           {/* Divider */}
           <div className="relative flex py-2 items-center" role="separator">
-            <div className="grow border-t border-white/10" />
+            <Separator className="flex-1 bg-white/10" />
             <span className="shrink-0 mx-4 text-neutral-600 text-xs uppercase tracking-widest">
               Or continue with email
             </span>
-            <div className="grow border-t border-white/10" />
+            <Separator className="flex-1 bg-white/10" />
           </div>
 
           {/* Email/Password Form */}

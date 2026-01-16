@@ -1,6 +1,5 @@
 export { ExportConfirmDialog } from './ExportConfirmDialog'
 export { ExportSheet } from './ExportSheet'
-export { PhotoboothHeader } from './PhotoboothHeader'
 export { PhotoStrip } from './PhotoStrip'
 export { CameraView } from './CameraView'
 export { PropertiesPanel } from './PropertiesPanel'

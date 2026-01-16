@@ -9,6 +9,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu'
+import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar'
+import { ModeToggle } from './ui/mode-toggle'
 
 interface AppHeaderProps {
   /** Show export button and handler (for /create page) */
@@ -73,20 +75,20 @@ export function AppHeader({
       </div>
       
       <div className="flex items-center gap-2 md:gap-3">
+        <ModeToggle />
         {/* User menu - visible on all sizes */}
         {isPending ? (
           <div className="w-8 h-8 rounded-full bg-white/10 animate-pulse" />
         ) : session ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="w-8 h-8 rounded-full overflow-hidden border-2 border-white/20 hover:border-white/40 transition-colors">
-                {session.user.image ? (
-                  <img src={session.user.image} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full bg-rose-500 flex items-center justify-center font-bold text-xs text-white">
+              <button className="focus:outline-none focus:ring-2 focus:ring-white/20 rounded-full">
+                <Avatar className="w-8 h-8 border-2 border-white/20 hover:border-white/40 transition-colors">
+                  <AvatarImage src={session.user.image ?? undefined} alt={session.user.name ?? ""} />
+                  <AvatarFallback className="bg-rose-500 text-white text-xs font-bold">
                     {session.user.name?.charAt(0).toUpperCase()}
-                  </div>
-                )}
+                  </AvatarFallback>
+                </Avatar>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48 bg-neutral-900 border-white/10">
