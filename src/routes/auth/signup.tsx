@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { signUpSchema, SignUpFormData } from "@/lib/validations/auth";
 import { z } from "zod";
 
@@ -221,7 +222,7 @@ function SignUp() {
 
   // Password strength color and label
   const getStrengthColor = (score: number) => {
-    if (score === 0) return "bg-neutral-700";
+    if (score === 0) return "bg-muted";
     if (score === 1) return "bg-red-500";
     if (score === 2) return "bg-orange-500";
     if (score === 3) return "bg-yellow-500";
@@ -237,7 +238,7 @@ function SignUp() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans selection:bg-blue-500/30 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-background font-sans selection:bg-blue-500/30 flex items-center justify-center p-4 relative overflow-hidden">
       {/* Ambient Background */}
       <div className="absolute inset-0 z-0" aria-hidden="true">
         <div className="absolute top-0 right-0 w-full h-[500px] bg-gradient-to-b from-blue-900/10 to-transparent" />
@@ -247,7 +248,7 @@ function SignUp() {
       {/* Success Overlay */}
       {showSuccess && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-neutral-900 border border-blue-500/20 rounded-2xl p-8 flex flex-col items-center gap-4 animate-in zoom-in duration-300">
+          <div className="bg-card border border-blue-500/20 rounded-2xl p-8 flex flex-col items-center gap-4 animate-in zoom-in duration-300">
             <div className="relative">
               <div className="absolute inset-0 bg-blue-500/20 rounded-full animate-ping" />
               <CheckCircle2 className="w-16 h-16 text-blue-500 relative z-10" />
@@ -266,16 +267,16 @@ function SignUp() {
           >
             OURBOOTH
           </Link>
-          <h2 className="text-4xl font-light text-neutral-400">
+          <h2 className="text-4xl font-light text-muted-foreground">
             Join the movement
           </h2>
-          <p className="text-sm text-neutral-600">
+          <p className="text-sm text-muted-foreground/60">
             Create your account to get started
           </p>
         </div>
 
         {/* Form Container */}
-        <div className="space-y-4 bg-neutral-950/50 backdrop-blur-xl border border-white/5 p-8 rounded-2xl shadow-2xl animate-in fade-in duration-300">
+        <div className="space-y-4 bg-card/50 backdrop-blur-xl border border-border p-8 rounded-2xl shadow-2xl animate-in fade-in duration-300">
           {/* Google Sign In */}
           <Button
             type="button"
@@ -312,22 +313,22 @@ function SignUp() {
 
           {/* Divider */}
           <div className="relative flex py-2 items-center" role="separator">
-            <div className="grow border-t border-white/10" />
-            <span className="shrink-0 mx-4 text-neutral-600 text-xs uppercase tracking-widest">
+            <Separator className="flex-1 bg-border" />
+            <span className="shrink-0 mx-4 text-muted-foreground/60 text-xs uppercase tracking-widest">
               Or create with email
             </span>
-            <div className="grow border-t border-white/10" />
+            <Separator className="flex-1 bg-border" />
           </div>
 
           {/* Email/Password Form */}
           <form onSubmit={handleSignUp} className="space-y-4" noValidate>
             {/* Name Field */}
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-sm text-neutral-400">
+              <Label htmlFor="name" className="text-sm text-muted-foreground">
                 Full name
               </Label>
               <div className="relative group">
-                <div className="absolute top-3.5 left-3 text-neutral-500 group-focus-within:text-blue-400 transition-colors pointer-events-none">
+                <div className="absolute top-3.5 left-3 text-muted-foreground group-focus-within:text-blue-400 transition-colors pointer-events-none">
                   <User className="w-5 h-5" aria-hidden="true" />
                 </div>
                 <Input
@@ -352,14 +353,14 @@ function SignUp() {
                   aria-invalid={!!errors.name}
                   aria-describedby={errors.name ? "name-error" : undefined}
                   className={`
-                    w-full bg-neutral-900/50 border rounded-xl pl-10 pr-4 py-3 h-12
-                    outline-none transition-all text-white placeholder:text-neutral-600
-                    focus:bg-neutral-900 focus:ring-2 focus:ring-blue-500/20
+                    w-full bg-muted/50 border rounded-xl pl-10 pr-4 py-3 h-12
+                    outline-none transition-all placeholder:text-muted-foreground
+                    focus:bg-muted focus:ring-2 focus:ring-blue-500/20
                     disabled:opacity-50 disabled:cursor-not-allowed
                     ${
                       errors.name
                         ? "border-red-500/50 focus:border-red-500"
-                        : "border-white/10 focus:border-blue-500/50"
+                        : "border-border focus:border-blue-500/50"
                     }
                   `}
                 />
@@ -378,11 +379,11 @@ function SignUp() {
 
             {/* Email Field */}
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm text-neutral-400">
+              <Label htmlFor="email" className="text-sm text-muted-foreground">
                 Email address
               </Label>
               <div className="relative group">
-                <div className="absolute top-3.5 left-3 text-neutral-500 group-focus-within:text-blue-400 transition-colors pointer-events-none">
+                <div className="absolute top-3.5 left-3 text-muted-foreground group-focus-within:text-blue-400 transition-colors pointer-events-none">
                   <Mail className="w-5 h-5" aria-hidden="true" />
                 </div>
                 <Input
@@ -407,14 +408,14 @@ function SignUp() {
                   aria-invalid={!!errors.email}
                   aria-describedby={errors.email ? "email-error" : undefined}
                   className={`
-                    w-full bg-neutral-900/50 border rounded-xl pl-10 pr-4 py-3 h-12
-                    outline-none transition-all text-white placeholder:text-neutral-600
-                    focus:bg-neutral-900 focus:ring-2 focus:ring-blue-500/20
+                    w-full bg-muted/50 border rounded-xl pl-10 pr-4 py-3 h-12
+                    outline-none transition-all placeholder:text-muted-foreground
+                    focus:bg-muted focus:ring-2 focus:ring-blue-500/20
                     disabled:opacity-50 disabled:cursor-not-allowed
                     ${
                       errors.email
                         ? "border-red-500/50 focus:border-red-500"
-                        : "border-white/10 focus:border-blue-500/50"
+                        : "border-border focus:border-blue-500/50"
                     }
                   `}
                 />
@@ -433,11 +434,11 @@ function SignUp() {
 
             {/* Password Field */}
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm text-neutral-400">
+              <Label htmlFor="password" className="text-sm text-muted-foreground">
                 Password
               </Label>
               <div className="relative group">
-                <div className="absolute top-3.5 left-3 text-neutral-500 group-focus-within:text-blue-400 transition-colors pointer-events-none">
+                <div className="absolute top-3.5 left-3 text-muted-foreground group-focus-within:text-blue-400 transition-colors pointer-events-none">
                   <Lock className="w-5 h-5" aria-hidden="true" />
                 </div>
                 <Input
@@ -462,14 +463,14 @@ function SignUp() {
                         : undefined
                   }
                   className={`
-                    w-full bg-neutral-900/50 border rounded-xl pl-10 pr-4 py-3 h-12
-                    outline-none transition-all text-white placeholder:text-neutral-600
-                    focus:bg-neutral-900 focus:ring-2 focus:ring-blue-500/20
+                    w-full bg-muted/50 border rounded-xl pl-10 pr-4 py-3 h-12
+                    outline-none transition-all placeholder:text-muted-foreground
+                    focus:bg-muted focus:ring-2 focus:ring-blue-500/20
                     disabled:opacity-50 disabled:cursor-not-allowed
                     ${
                       errors.password
                         ? "border-red-500/50 focus:border-red-500"
-                        : "border-white/10 focus:border-blue-500/50"
+                        : "border-border focus:border-blue-500/50"
                     }
                   `}
                 />
@@ -489,7 +490,7 @@ function SignUp() {
                         className={`h-1 flex-1 rounded-full transition-all duration-300 ${
                           i < passwordStrength.score
                             ? getStrengthColor(passwordStrength.score)
-                            : "bg-neutral-800"
+                            : "bg-muted"
                         }`}
                       />
                     ))}
@@ -507,13 +508,13 @@ function SignUp() {
                               ? "text-yellow-400"
                               : passwordStrength.score >= 4
                                 ? "text-green-400"
-                                : "text-neutral-500"
+                                : "text-muted-foreground"
                       }`}
                     >
                       {getStrengthLabel(passwordStrength.score)}
                     </span>
 
-                    <div className="flex gap-2 text-neutral-500">
+                    <div className="flex gap-2 text-muted-foreground">
                       <span
                         className={`flex items-center gap-1 ${passwordStrength.checks.length ? "text-green-400" : ""}`}
                       >
@@ -583,11 +584,11 @@ function SignUp() {
         </div>
 
         {/* Footer */}
-        <p className="text-center mt-8 text-neutral-500 animate-in">
+        <p className="text-center mt-8 text-muted-foreground animate-in">
           Already have an account?{" "}
           <Link
             to="/auth/signin"
-            className="text-white hover:text-blue-400 hover:underline underline-offset-4 transition-colors font-medium"
+            className="text-foreground hover:text-blue-400 hover:underline underline-offset-4 transition-colors font-medium"
           >
             Sign in
           </Link>

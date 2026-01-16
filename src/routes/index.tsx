@@ -7,6 +7,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { ImageIcon, LogOut } from 'lucide-react'
 
 export const Route = createFileRoute('/')({
@@ -36,14 +37,13 @@ function LandingPage() {
         {session ? (
             <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <button className="w-10 h-10 rounded-full overflow-hidden border border-white hover:border-white/80 transition-colors">
-                {session.user.image ? (
-                    <img src={session.user.image} alt="" className="w-full h-full object-cover" />
-                ) : (
-                    <div className="w-full h-full bg-rose-500 flex items-center justify-center font-bold text-sm text-white">
+                <button className="focus:outline-none focus:ring-2 focus:ring-white/20 rounded-full">
+                <Avatar className="w-10 h-10 border border-white hover:border-white/80 transition-colors">
+                    <AvatarImage src={session.user.image ?? undefined} alt={session.user.name ?? ""} />
+                    <AvatarFallback className="bg-rose-500 text-white text-sm font-bold">
                     {session.user.name?.charAt(0).toUpperCase()}
-                    </div>
-                )}
+                    </AvatarFallback>
+                </Avatar>
                 </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48 bg-neutral-900 border-white/10 text-white z-60">

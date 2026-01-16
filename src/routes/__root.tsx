@@ -11,6 +11,7 @@ import appCss from "../styles.css?url";
 
 import type { QueryClient } from "@tanstack/react-query";
 import { Toaster } from "../components/ui/sonner";
+import { ThemeProvider } from "@/components/theme-provider";
 
 interface MyRouterContext {
   queryClient: QueryClient;
@@ -52,20 +53,23 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        {children}
-        <Toaster />
-        <TanStackDevtools
-          config={{
-            position: "bottom-right",
-          }}
-          plugins={[
-            {
-              name: "Tanstack Router",
-              render: <TanStackRouterDevtoolsPanel />,
-            },
-            TanStackQueryDevtools,
-          ]}
-        />
+        <ThemeProvider>
+          {children}
+          <Toaster />
+          <TanStackDevtools
+            config={{
+              position: "bottom-right",
+            }}
+            plugins={[
+              {
+                name: "Tanstack Router",
+                render: <TanStackRouterDevtoolsPanel />,
+              },
+              TanStackQueryDevtools,
+            ]}
+          />
+        </ThemeProvider>
+
         <Scripts />
       </body>
     </html>

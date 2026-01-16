@@ -1,10 +1,18 @@
 import { useState } from 'react'
-import { X, Download, FileImage, Film, Sparkles, ExternalLink } from 'lucide-react'
+import { Download, FileImage, Film, Sparkles, ExternalLink } from 'lucide-react'
 import { toast } from 'sonner'
 import { useNavigate } from '@tanstack/react-router'
 import { authClient } from '@/lib/auth-client'
 import { exportPhotoboothFn } from '@/server/export'
 import { usePhotoboothStore, RESOLUTION_OPTIONS, type ExportResolution } from '@/stores/photobooth-store'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetFooter,
+} from '@/components/ui/sheet'
+import { Button } from '@/components/ui/button'
 
 interface ExportSheetProps {
   isOpen: boolean
@@ -76,7 +84,6 @@ export function ExportSheet({ isOpen, onClose }: ExportSheetProps) {
         throw new Error("Export failed")
       }
 
-      // Show success screen with download link (works better on mobile)
       setExportedUrl(result.downloadUrl)
       toast.success("Photo ready! 🎉")
     } catch (error) {
@@ -92,157 +99,142 @@ export function ExportSheet({ isOpen, onClose }: ExportSheetProps) {
     onClose()
   }
 
-  if (!isOpen) return null
-
   return (
-    <>
-      {/* Backdrop */}
-      <div 
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
-        onClick={handleClose}
-      />
-      
-      {/* Sheet - Bottom on mobile, centered modal on desktop */}
-      <div className="fixed inset-0 z-50 flex items-end md:items-center md:justify-center pointer-events-none">
-        <div className="pointer-events-auto w-full md:w-[400px] bg-neutral-950 border border-white/10 rounded-t-3xl md:rounded-2xl p-6 pb-10 md:pb-6 safe-area-inset-bottom max-h-[85vh] overflow-y-auto md:max-h-[90vh] animate-in slide-in-from-bottom md:slide-in-from-bottom-0 md:zoom-in-95 duration-300">
-          {/* Handle - mobile only */}
-          <div className="w-12 h-1 bg-neutral-700 rounded-full mx-auto mb-4 md:hidden" />
-          
-          {exportedUrl ? (
-            /* Success Screen */
-            <>
-              <div className="flex items-center justify-between mb-5">
-                <h2 className="text-lg font-bold text-white">Ready to Save!</h2>
-                <button 
-                  onClick={handleClose}
-                  className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-full text-neutral-400 hover:text-white transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+    <Sheet open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+      <SheetContent 
+        side="bottom" 
+        className="bg-neutral-950 border-white/10 text-white rounded-t-3xl max-h-[85vh] md:max-h-[90vh] md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:bottom-auto md:top-1/2 md:-translate-y-1/2 md:w-100 md:rounded-2xl md:border"
+      >
+        {exportedUrl ? (
+          /* Success Screen */
+          <>
+            <SheetHeader className="p-0 pb-4">
+              <SheetTitle className="text-lg font-bold text-white">Ready to Save!</SheetTitle>
+            </SheetHeader>
 
-              {/* Preview */}
-              <div className="mb-6 rounded-xl overflow-hidden border border-white/10 bg-white/5 flex justify-center bg-black/40">
-                <img 
-                  src={exportedUrl} 
-                  alt="Your exported photo" 
-                  className="max-w-full max-h-[45vh] w-auto h-auto object-contain"
-                />
-              </div>
+            {/* Preview */}
+            <div className="mb-4 rounded-xl overflow-hidden border border-white/10 bg-black/40 flex justify-center">
+              <img 
+                src={exportedUrl} 
+                alt="Your exported photo" 
+                className="max-w-full max-h-[45vh] w-auto h-auto object-contain"
+              />
+            </div>
 
-              {/* Action Buttons */}
-              <div className="space-y-3">
+            {/* Action Buttons */}
+            <SheetFooter className="flex-col gap-3 p-0 mt-0">
+              <Button asChild className="w-full bg-linear-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white font-bold rounded-xl h-12">
                 <a
                   href={exportedUrl}
                   download={`ourbooth-${Date.now()}.${exportType === 'gif' ? 'gif' : 'png'}`}
-                  className="w-full py-3.5 bg-linear-to-r from-rose-600 to-pink-600 text-white font-bold rounded-xl shadow-[0_0_30px_-5px_rgba(225,29,72,0.5)] flex items-center justify-center gap-2"
                 >
-                  <Download className="w-5 h-5" />
-                  <span>Save to Photos</span>
+                  <Download className="w-5 h-5 mr-2" />
+                  Save to Photos
                 </a>
-                
+              </Button>
+              
+              <Button asChild variant="outline" className="w-full border-white/20 text-white hover:bg-white/5 rounded-xl h-11">
                 <a
                   href={exportedUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full py-3 border border-white/20 text-white font-medium rounded-xl flex items-center justify-center gap-2 hover:bg-white/5 transition-colors"
                 >
-                  <ExternalLink className="w-4 h-4" />
-                  <span>Open in New Tab</span>
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Open in New Tab
                 </a>
+              </Button>
 
-                <button
-                  onClick={handleClose}
-                  className="w-full py-2.5 text-neutral-400 text-sm hover:text-white transition-colors"
-                >
-                  Done
-                </button>
-              </div>
-            </>
-          ) : (
-            /* Export Settings */
-            <>
-              <div className="flex items-center justify-between mb-5">
-                <h2 className="text-lg font-bold text-white">Export Settings</h2>
-                <button 
-                  onClick={handleClose}
-                  className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-full text-neutral-400 hover:text-white transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+              <Button
+                variant="ghost"
+                onClick={handleClose}
+                className="w-full text-neutral-400 hover:text-white"
+              >
+                Done
+              </Button>
+            </SheetFooter>
+          </>
+        ) : (
+          /* Export Settings */
+          <>
+            <SheetHeader className="p-0 pb-4">
+              <SheetTitle className="text-lg font-bold text-white">Export Settings</SheetTitle>
+            </SheetHeader>
 
-              {/* Format Selection */}
-              <div className="mb-5">
-                <label className="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2 block">Format</label>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setExportType('png')}
-                    className={`flex-1 py-3 px-3 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${
-                      exportType === 'png' 
-                        ? 'border-rose-500 bg-rose-500/10' 
-                        : 'border-white/10 hover:border-white/20'
+            {/* Format Selection */}
+            <div className="mb-5">
+              <label className="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2 block">Format</label>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setExportType('png')}
+                  className={`flex-1 h-12 rounded-lg transition-all ${
+                    exportType === 'png' 
+                      ? 'border-rose-500 bg-rose-500/10 text-rose-400' 
+                      : 'border-white/10 hover:border-white/20 text-neutral-400'
+                  }`}
+                >
+                  <FileImage className="w-5 h-5 mr-2" />
+                  PNG
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setExportType('gif')}
+                  className={`flex-1 h-12 rounded-lg transition-all ${
+                    exportType === 'gif' 
+                      ? 'border-rose-500 bg-rose-500/10 text-rose-400' 
+                      : 'border-white/10 hover:border-white/20 text-neutral-400'
+                  }`}
+                >
+                  <Film className="w-5 h-5 mr-2" />
+                  GIF
+                </Button>
+              </div>
+            </div>
+
+            {/* Resolution Selection */}
+            <div className="mb-6">
+              <label className="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2 block">Quality</label>
+              <div className="flex gap-2">
+                {RESOLUTION_OPTIONS.map((opt) => (
+                  <Button
+                    key={opt.value}
+                    variant="outline"
+                    onClick={() => setExportResolution(opt.value as ExportResolution)}
+                    className={`flex-1 h-10 rounded-lg transition-all ${
+                      exportResolution === opt.value 
+                        ? 'border-rose-500 bg-rose-500/10 text-rose-400' 
+                        : 'border-white/10 hover:border-white/20 text-neutral-400'
                     }`}
                   >
-                    <FileImage className={`w-5 h-5 ${exportType === 'png' ? 'text-rose-400' : 'text-neutral-400'}`} />
-                    <span className={`text-sm font-semibold ${exportType === 'png' ? 'text-rose-400' : 'text-neutral-400'}`}>PNG</span>
-                  </button>
-                  <button
-                    onClick={() => setExportType('gif')}
-                    className={`flex-1 py-3 px-3 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${
-                      exportType === 'gif' 
-                        ? 'border-rose-500 bg-rose-500/10' 
-                        : 'border-white/10 hover:border-white/20'
-                    }`}
-                  >
-                    <Film className={`w-5 h-5 ${exportType === 'gif' ? 'text-rose-400' : 'text-neutral-400'}`} />
-                    <span className={`text-sm font-semibold ${exportType === 'gif' ? 'text-rose-400' : 'text-neutral-400'}`}>GIF</span>
-                  </button>
-                </div>
+                    {opt.label}
+                  </Button>
+                ))}
               </div>
+            </div>
 
-              {/* Resolution Selection */}
-              <div className="mb-6">
-                <label className="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2 block">Quality</label>
-                <div className="flex gap-2">
-                  {RESOLUTION_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => setExportResolution(opt.value as ExportResolution)}
-                      className={`flex-1 py-2.5 px-2 rounded-lg border transition-all text-center ${
-                        exportResolution === opt.value 
-                          ? 'border-rose-500 bg-rose-500/10 text-rose-400' 
-                          : 'border-white/10 hover:border-white/20 text-neutral-400'
-                      }`}
-                    >
-                      <div className="text-sm font-semibold">{opt.label}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Export Button */}
-              <button
+            {/* Export Button */}
+            <SheetFooter className="p-0 mt-0">
+              <Button
                 onClick={handleExport}
                 disabled={isExporting}
-                className="w-full py-3.5 bg-linear-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 disabled:opacity-50 text-white font-bold rounded-xl shadow-[0_0_30px_-5px_rgba(225,29,72,0.5)] transition-all flex items-center justify-center gap-2"
+                className="w-full h-12 bg-linear-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white font-bold rounded-xl shadow-[0_0_30px_-5px_rgba(225,29,72,0.5)]"
               >
                 {isExporting ? (
                   <>
-                    <Sparkles className="w-5 h-5 animate-spin" />
-                    <span>Creating magic...</span>
+                    <Sparkles className="w-5 h-5 mr-2 animate-spin" />
+                    Creating magic...
                   </>
                 ) : (
                   <>
-                    <Download className="w-5 h-5" />
-                    <span>Export {exportType.toUpperCase()}</span>
+                    <Download className="w-5 h-5 mr-2" />
+                    Export {exportType.toUpperCase()}
                   </>
                 )}
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-    </>
+              </Button>
+            </SheetFooter>
+          </>
+        )}
+      </SheetContent>
+    </Sheet>
   )
 }

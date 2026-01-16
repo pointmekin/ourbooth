@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { signInSchema, SignInFormData } from "@/lib/validations/auth";
 import { z } from "zod";
 
@@ -153,7 +154,7 @@ function SignIn() {
   const isLoading = isEmailLoading || isGoogleLoading;
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans selection:bg-rose-500/30 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-background font-sans selection:bg-rose-500/30 flex items-center justify-center p-4 relative overflow-hidden">
       {/* Ambient Background */}
       <div className="absolute inset-0 z-0" aria-hidden="true">
         <div className="absolute top-0 left-0 w-full h-125 bg-linear-to-b from-rose-900/10 to-transparent" />
@@ -163,7 +164,7 @@ function SignIn() {
       {/* Success Overlay */}
       {showSuccess && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-neutral-900 border border-rose-500/20 rounded-2xl p-8 flex flex-col items-center gap-4 animate-in zoom-in duration-300">
+          <div className="bg-card border border-rose-500/20 rounded-2xl p-8 flex flex-col items-center gap-4 animate-in zoom-in duration-300">
             <div className="relative">
               <div className="absolute inset-0 bg-rose-500/20 rounded-full animate-ping" />
               <CheckCircle2 className="w-16 h-16 text-rose-500 relative z-10" />
@@ -182,14 +183,14 @@ function SignIn() {
           >
             OURBOOTH
           </Link>
-          <h2 className="text-4xl font-light text-neutral-400">Welcome back</h2>
-          <p className="text-sm text-neutral-600">
+          <h2 className="text-4xl font-light text-muted-foreground">Welcome back</h2>
+          <p className="text-sm text-muted-foreground/60">
             Sign in to continue creating
           </p>
         </div>
 
         {/* Form Container */}
-        <div className="space-y-4 bg-neutral-950/50 backdrop-blur-xl border border-white/5 p-8 rounded-2xl shadow-2xl animate-in fade-in duration-300">
+        <div className="space-y-4 bg-card/50 backdrop-blur-xl border border-border p-8 rounded-2xl shadow-2xl animate-in fade-in duration-300">
           {/* Google Sign In */}
           <Button
             type="button"
@@ -226,22 +227,22 @@ function SignIn() {
 
           {/* Divider */}
           <div className="relative flex py-2 items-center" role="separator">
-            <div className="grow border-t border-white/10" />
-            <span className="shrink-0 mx-4 text-neutral-600 text-xs uppercase tracking-widest">
+            <Separator className="flex-1 bg-border" />
+            <span className="shrink-0 mx-4 text-muted-foreground/60 text-xs uppercase tracking-widest">
               Or continue with email
             </span>
-            <div className="grow border-t border-white/10" />
+            <Separator className="flex-1 bg-border" />
           </div>
 
           {/* Email/Password Form */}
           <form onSubmit={handleSignIn} className="space-y-4" noValidate>
             {/* Email Field */}
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm text-neutral-400">
+              <Label htmlFor="email" className="text-sm text-muted-foreground">
                 Email address
               </Label>
               <div className="relative group">
-                <div className="absolute top-3.5 left-3 text-neutral-500 group-focus-within:text-rose-400 transition-colors pointer-events-none">
+                <div className="absolute top-3.5 left-3 text-muted-foreground group-focus-within:text-rose-400 transition-colors pointer-events-none">
                   <Mail className="w-5 h-5" aria-hidden="true" />
                 </div>
                 <Input
@@ -266,14 +267,14 @@ function SignIn() {
                   aria-invalid={!!errors.email}
                   aria-describedby={errors.email ? "email-error" : undefined}
                   className={`
-                    w-full bg-neutral-900/50 border rounded-xl pl-10 pr-4 py-3 h-12
-                    outline-none transition-all text-white placeholder:text-neutral-600
-                    focus:bg-neutral-900 focus:ring-2 focus:ring-rose-500/20
+                    w-full bg-muted/50 border rounded-xl pl-10 pr-4 py-3 h-12
+                    outline-none transition-all placeholder:text-muted-foreground
+                    focus:bg-muted focus:ring-2 focus:ring-rose-500/20
                     disabled:opacity-50 disabled:cursor-not-allowed
                     ${
                       errors.email
                         ? "border-red-500/50 focus:border-red-500"
-                        : "border-white/10 focus:border-rose-500/50"
+                        : "border-border focus:border-rose-500/50"
                     }
                   `}
                 />
@@ -292,11 +293,11 @@ function SignIn() {
 
             {/* Password Field */}
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm text-neutral-400">
+              <Label htmlFor="password" className="text-sm text-muted-foreground">
                 Password
               </Label>
               <div className="relative group">
-                <div className="absolute top-3.5 left-3 text-neutral-500 group-focus-within:text-rose-400 transition-colors pointer-events-none">
+                <div className="absolute top-3.5 left-3 text-muted-foreground group-focus-within:text-rose-400 transition-colors pointer-events-none">
                   <Lock className="w-5 h-5" aria-hidden="true" />
                 </div>
                 <Input
@@ -323,14 +324,14 @@ function SignIn() {
                     errors.password ? "password-error" : undefined
                   }
                   className={`
-                    w-full bg-neutral-900/50 border rounded-xl pl-10 pr-4 py-3 h-12
-                    outline-none transition-all text-white placeholder:text-neutral-600
-                    focus:bg-neutral-900 focus:ring-2 focus:ring-rose-500/20
+                    w-full bg-muted/50 border rounded-xl pl-10 pr-4 py-3 h-12
+                    outline-none transition-all placeholder:text-muted-foreground
+                    focus:bg-muted focus:ring-2 focus:ring-rose-500/20
                     disabled:opacity-50 disabled:cursor-not-allowed
                     ${
                       errors.password
                         ? "border-red-500/50 focus:border-red-500"
-                        : "border-white/10 focus:border-rose-500/50"
+                        : "border-border focus:border-rose-500/50"
                     }
                   `}
                 />
@@ -351,7 +352,7 @@ function SignIn() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white font-bold h-12 rounded-xl transition-all shadow-[0_0_20px_-5px_rgba(225,29,72,0.5)] hover:shadow-[0_0_30px_-5px_rgba(225,29,72,0.6)] flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-rose-600"
+              className="w-full bg-rose-600 hover:bg-rose-500 active:bg-rose-700 font-bold h-12 rounded-xl transition-all shadow-[0_0_20px_-5px_rgba(225,29,72,0.5)] hover:shadow-[0_0_30px_-5px_rgba(225,29,72,0.6)] flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-rose-600"
             >
               {isEmailLoading ? (
                 <Loader2 className="animate-spin w-5 h-5" aria-hidden="true" />
@@ -369,11 +370,11 @@ function SignIn() {
         </div>
 
         {/* Footer */}
-        <p className="text-center mt-8 text-neutral-500">
+        <p className="text-center mt-8 text-muted-foreground">
           Don't have an account?{" "}
           <Link
             to="/auth/signup"
-            className="text-white hover:text-rose-400 hover:underline underline-offset-4 transition-colors font-medium"
+            className="text-foreground hover:text-rose-400 hover:underline underline-offset-4 transition-colors font-medium"
           >
             Create one
           </Link>

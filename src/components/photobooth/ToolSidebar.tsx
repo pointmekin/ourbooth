@@ -10,6 +10,13 @@ import {
   LucideIcon,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface ToolSidebarProps {
   captureMode: "upload" | "camera";
@@ -30,15 +37,25 @@ function ToolIcon({
   className?: string;
 }) {
   return (
-    <div
-      onClick={onClick}
-      className={`relative w-10 h-10 rounded-xl flex items-center justify-center cursor-pointer transition-all duration-300 group ${active ? "bg-white text-black shadow-[0_0_15px_-3px_rgba(255,255,255,0.3)]" : "hover:bg-white/10 text-neutral-500 hover:text-white"} ${className}`}
-    >
-      <span className="text-[10px] font-bold uppercase tracking-wider hidden group-hover:block absolute left-full ml-4 bg-neutral-800 px-2 py-1 rounded text-white border border-white/10 whitespace-nowrap z-100 animate-in fade-in slide-in-from-left-2 pointer-events-none">
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onClick}
+          className={`w-10 h-10 rounded-xl transition-all duration-300 ${
+            active 
+              ? "bg-primary text-primary-foreground shadow-[0_0_15px_-3px_rgba(255,255,255,0.3)] hover:bg-primary hover:text-primary-foreground" 
+              : "text-muted-foreground hover:bg-muted hover:text-foreground"
+          } ${className}`}
+        >
+          <Icon className="w-5 h-5 opacity-80" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="right" sideOffset={8}>
         {label}
-      </span>
-      <Icon className="w-5 h-5 opacity-80" />
-    </div>
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -59,7 +76,7 @@ export function ToolSidebar({
   };
 
   return (
-    <aside className="hidden md:flex w-20 border-r border-white/5 flex-col items-center py-6 gap-6 z-300 bg-neutral-950/80 backdrop-blur-xl overflow-visible">
+    <aside className="hidden md:flex w-20 border-r border-border flex-col items-center py-6 gap-6 z-300 bg-background/80 backdrop-blur-xl overflow-visible">
       <div className="flex space-y-6 w-full flex-col items-center">
         <ToolIcon
           label="Upload Mode"
@@ -80,25 +97,22 @@ export function ToolSidebar({
       <div className="flex-1" />
 
       {session && (
-        <Link to="/photos">
-          <ToolIcon label="My Photos" icon={ImageIcon} />
-        </Link>
-      )}
-
-      {session && (
-        <div className="w-10 h-10 rounded-full overflow-hidden border border-white/20 mb-2">
-          {session.user.image ? (
-            <img
-              src={session.user.image}
-              alt={session.user.name}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full bg-rose-500 flex items-center justify-center font-bold text-xs">
-              {session.user.name?.charAt(0).toUpperCase()}
-            </div>
-          )}
-        </div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Link to="/photos">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="w-10 h-10 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <ImageIcon className="w-5 h-5 opacity-80" />
+              </Button>
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent side="right" sideOffset={8}>
+            My Photos
+          </TooltipContent>
+        </Tooltip>
       )}
 
       <ToolIcon
