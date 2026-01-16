@@ -101,16 +101,16 @@ function MyPhotosPage() {
     }
 
     return (
-        <div className="min-h-dvh bg-neutral-950 text-neutral-100 font-sans">
+        <div className="min-h-dvh font-sans">
             {/* Header */}
             <AppHeader />
 
             {/* Page Title */}
-            <div className="border-b border-white/5 bg-neutral-950/50">
+            <div className="border-b border-border">
                 <div className="max-w-6xl mx-auto px-4 py-6 flex items-center justify-between">
                     <h1 className="text-2xl font-bold">My Photos</h1>
                     <Link to="/create">
-                        <Button className="bg-rose-600 hover:bg-rose-500 text-white rounded-full font-semibold px-6">
+                        <Button className="bg-rose-600 hover:bg-rose-500 rounded-full font-semibold px-6">
                             Create New
                         </Button>
                     </Link>
@@ -120,33 +120,33 @@ function MyPhotosPage() {
             {/* Content */}
             <main className="max-w-6xl mx-auto px-4 py-8">
                 {isLoading ? (
-                    <div className="flex flex-col items-center justify-center py-20 text-neutral-500">
+                    <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
                         <Loader2 className="w-8 h-8 animate-spin mb-4" />
                         <p>Loading your photos...</p>
                     </div>
                 ) : photos.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 text-center">
-                        <div className="w-20 h-20 rounded-full bg-neutral-900 flex items-center justify-center mb-6">
-                            <ImageIcon className="w-10 h-10 text-neutral-600" />
+                        <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-6">
+                            <ImageIcon className="w-10 h-10 text-muted-foreground" />
                         </div>
                         <h2 className="text-xl font-semibold mb-2">No photos yet</h2>
-                        <p className="text-neutral-500 mb-6 max-w-sm">
+                        <p className="text-muted-foreground mb-6 max-w-sm">
                             Create your first photobooth strip and it will appear here.
                         </p>
                         <Link to="/create">
-                            <Button className="bg-rose-600 hover:bg-rose-500 text-white rounded-full font-semibold px-8">
+                            <Button className="bg-rose-600 hover:bg-rose-500 rounded-full font-semibold px-8">
                                 Create Your First Photo
                             </Button>
                         </Link>
                     </div>
                 ) : (
                     <>
-                        <p className="text-neutral-500 mb-6">{photos.length} photo{photos.length !== 1 ? 's' : ''}</p>
+                        <p className="text-muted-foreground mb-6">{photos.length} photo{photos.length !== 1 ? 's' : ''}</p>
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                             {photos.map((photo) => (
                                 <div 
                                     key={photo.id}
-                                    className="group relative bg-neutral-900 rounded-xl overflow-hidden border border-white/5 hover:border-white/10 transition-all"
+                                    className="group relative bg-card rounded-xl overflow-hidden border border-border hover:border-border/80 transition-all"
                                 >
                                     {/* Thumbnail */}
                                     <div className="aspect-2/3 relative">
@@ -186,15 +186,15 @@ function MyPhotosPage() {
                                     {/* Info */}
                                     <div className="p-3">
                                         <div className="flex items-center justify-between text-xs">
-                                            <span className="text-neutral-400">
+                                            <span className="text-muted-foreground">
                                                 {formatDate(photo.createdAt)}
                                             </span>
-                                            <span className="text-neutral-600 uppercase">
+                                            <span className="text-muted-foreground/60 uppercase">
                                                 {photo.layout}
                                             </span>
                                         </div>
                                         {photo.fileSize && (
-                                            <p className="text-[10px] text-neutral-600 mt-1">
+                                            <p className="text-[10px] text-muted-foreground/60 mt-1">
                                                 {formatFileSize(photo.fileSize)}
                                             </p>
                                         )}

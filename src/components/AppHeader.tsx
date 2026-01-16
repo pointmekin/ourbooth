@@ -37,7 +37,7 @@ export function AppHeader({
 
   return (
     <header 
-      className="h-14 md:h-16 border-b border-white/5 flex items-center justify-between px-4 md:px-8 bg-neutral-950/80 backdrop-blur-md z-50 cursor-default"
+      className="h-14 md:h-16 border-b border-white/5 flex items-center justify-between px-4 md:px-8  backdrop-blur-md z-50 cursor-default"
       onTouchStart={(e) => e.stopPropagation()}
       onTouchEnd={(e) => e.stopPropagation()}
       onTouchMove={(e) => e.stopPropagation()}
@@ -49,7 +49,7 @@ export function AppHeader({
             onClick={onBackToTemplates}
             variant="ghost"
             size="sm"
-            className="h-8 px-2 md:px-3 text-neutral-400 hover:text-white hover:bg-white/10"
+            className="h-8 px-2 md:px-3 text-neutral-400"
           >
             <ChevronLeft className="w-4 h-4" />
             <span className="hidden sm:inline">Templates</span>
@@ -59,7 +59,7 @@ export function AppHeader({
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 px-2 md:px-3 text-neutral-400 hover:text-white hover:bg-white/10"
+              className="h-8 px-2 md:px-3 text-neutral-400"
             >
               <Home className="w-4 h-4" />
               <span className="hidden sm:inline ml-1">Create</span>
@@ -68,7 +68,7 @@ export function AppHeader({
         )}
         
         <Link to="/create">
-          <h1 className="text-lg md:text-xl font-bold tracking-tighter bg-linear-to-br from-white to-white/50 bg-clip-text text-transparent">
+          <h1 className="text-lg md:text-xl font-bold tracking-tighterbg-clip-text ">
             OURBOOTH
           </h1>
         </Link>
@@ -78,25 +78,25 @@ export function AppHeader({
         <ModeToggle />
         {/* User menu - visible on all sizes */}
         {isPending ? (
-          <div className="w-8 h-8 rounded-full bg-white/10 animate-pulse" />
+          <div className="w-8 h-8 rounded-full animate-pulse" />
         ) : session ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="focus:outline-none focus:ring-2 focus:ring-white/20 rounded-full">
                 <Avatar className="w-8 h-8 border-2 border-white/20 hover:border-white/40 transition-colors">
                   <AvatarImage src={session.user.image ?? undefined} alt={session.user.name ?? ""} />
-                  <AvatarFallback className="bg-rose-500 text-white text-xs font-bold">
+                  <AvatarFallback className="bg-rose-500  text-xs font-bold">
                     {session.user.name?.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48 bg-neutral-900 border-white/10">
-              <div className="px-3 py-2 text-sm text-white">
+            <DropdownMenuContent align="end" className="w-48  border-white/10">
+              <div className="px-3 py-2 text-sm">
                 {session.user.name || session.user.email}
               </div>
               <DropdownMenuSeparator className="bg-white/10" />
-              <DropdownMenuItem asChild className="cursor-pointer bg-transparent text-white">
+              <DropdownMenuItem asChild className="cursor-pointer bg-transparent ">
                 <Link to="/photos" className="flex items-center gap-2">
                   <ImageIcon className="w-4 h-4" />
                   My Photos
@@ -117,7 +117,7 @@ export function AppHeader({
             variant="ghost"
             size="sm"
             onClick={() => navigate({ to: '/auth/signin' })}
-            className="h-8 text-neutral-400 hover:text-white"
+            className="h-8 text-neutral-400 "
           >
             <LogIn className="w-4 h-4 mr-1" />
             Sign In
@@ -129,7 +129,7 @@ export function AppHeader({
           <Button 
             type="button"
             onClick={onExportClick}
-            className="hidden md:flex px-5 py-2 bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white text-sm font-semibold rounded-full shadow-[0_0_20px_-5px_rgba(225,29,72,0.6)] transition-all cursor-pointer items-center gap-2"
+            className="hidden md:flex px-5 py-2 bg-rose-600 hover:bg-rose-500 active:bg-rose-700  text-sm font-semibold rounded-full shadow-[0_0_20px_-5px_rgba(225,29,72,0.6)] transition-all cursor-pointer items-center gap-2"
           >
             <Download className="w-4 h-4" />
             Export

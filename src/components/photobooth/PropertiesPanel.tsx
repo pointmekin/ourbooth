@@ -73,16 +73,16 @@ export function PropertiesPanel({ isOpen, onClose }: PropertiesPanelProps) {
     <div ref={panelRef} className="space-y-6">
       {/* Current Template */}
       {selectedTemplate && (
-        <div className="space-y-2 p-3 bg-white/5 rounded-lg border border-white/10">
-          <div className="text-xs font-medium text-neutral-500 uppercase tracking-wider">Template</div>
-          <div className="text-sm font-semibold text-white">{selectedTemplate.name}</div>
-          <div className="text-xs text-neutral-400 capitalize">{selectedTemplate.category} • {selectedTemplate.layout.count} photos</div>
+        <div className="space-y-2 p-3 bg-muted/50 rounded-lg border border-border">
+          <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Template</div>
+          <div className="text-sm font-semibold text-foreground">{selectedTemplate.name}</div>
+          <div className="text-xs text-muted-foreground capitalize">{selectedTemplate.category} • {selectedTemplate.layout.count} photos</div>
         </div>
       )}
 
       {/* Footer Text Editor */}
       <div className="space-y-2">
-        <Label htmlFor="footer-text" className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
+        <Label htmlFor="footer-text" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
           Footer Text
         </Label>
         <Input
@@ -91,17 +91,17 @@ export function PropertiesPanel({ isOpen, onClose }: PropertiesPanelProps) {
           value={currentFooter}
           onChange={(e) => setCustomFooterText(e.target.value)}
           placeholder="Enter custom text..."
-          className="bg-white/5 border-white/10 text-white placeholder:text-neutral-600 focus:border-rose-500/50"
+          className="bg-muted/50 border-border text-foreground placeholder:text-muted-foreground focus:border-rose-500/50"
         />
       </div>
 
       {/* Stickers Section */}
       <div className="space-y-4">
-        <div className="text-sm font-medium text-neutral-300">Stickers</div>
+        <div className="text-sm font-medium text-foreground">Stickers</div>
         
         {/* Quick Access - Recently used or popular */}
         <div className="space-y-2">
-          <div className="text-xs text-neutral-500 uppercase tracking-wider">
+          <div className="text-xs text-muted-foreground uppercase tracking-wider">
             {recentStickerItems.length > 0 ? 'Recently Used' : 'Quick Add'}
           </div>
           <div className="flex gap-1.5 flex-wrap">
@@ -113,7 +113,7 @@ export function PropertiesPanel({ isOpen, onClose }: PropertiesPanelProps) {
                 onClick={() => handleAddSticker(sticker)}
                 draggable
                 onDragStart={(e) => handleDragStart(e, sticker)}
-                className="w-10 h-10 bg-white/5 hover:bg-rose-500/20 hover:scale-110 rounded-lg cursor-grab active:cursor-grabbing"
+                className="w-10 h-10 bg-muted/50 hover:bg-rose-500/20 hover:scale-110 rounded-lg cursor-grab active:cursor-grabbing"
                 title={sticker.name}
               >
                 <img 
@@ -129,20 +129,20 @@ export function PropertiesPanel({ isOpen, onClose }: PropertiesPanelProps) {
 
         {/* Category Accordions */}
         <div className="space-y-2">
-          <div className="text-xs text-neutral-500 uppercase tracking-wider">Categories</div>
+          <div className="text-xs text-muted-foreground uppercase tracking-wider">Categories</div>
           
           <Accordion type="single" collapsible className="space-y-2">
             {STICKER_PACKS.map(pack => (
               <AccordionItem 
                 key={pack.id} 
                 value={pack.id}
-                className="bg-white/5 rounded-lg overflow-hidden border border-white/5"
+                className="bg-muted/50 rounded-lg overflow-hidden border border-border"
               >
-                <AccordionTrigger className="px-3 py-2.5 hover:no-underline hover:bg-white/5">
+                <AccordionTrigger className="px-3 py-2.5 hover:no-underline hover:bg-muted">
                   <div className="flex items-center gap-3 flex-1">
                     <span className="text-lg">{pack.icon}</span>
-                    <span className="text-sm font-medium text-neutral-200">{pack.name}</span>
-                    <span className="text-[10px] text-neutral-500 ml-auto mr-2">{pack.stickers.length}</span>
+                    <span className="text-sm font-medium text-foreground">{pack.name}</span>
+                    <span className="text-[10px] text-muted-foreground ml-auto mr-2">{pack.stickers.length}</span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="px-2 pb-2">
@@ -155,7 +155,7 @@ export function PropertiesPanel({ isOpen, onClose }: PropertiesPanelProps) {
                         onClick={() => handleAddSticker(sticker)}
                         draggable
                         onDragStart={(e) => handleDragStart(e, sticker)}
-                        className="aspect-square w-full h-auto bg-white/5 hover:bg-rose-500/20 rounded-md p-1.5 cursor-grab active:cursor-grabbing"
+                        className="aspect-square w-full h-auto bg-muted/50 hover:bg-rose-500/20 rounded-md p-1.5 cursor-grab active:cursor-grabbing"
                         title={sticker.name}
                       >
                         <img 
@@ -174,7 +174,7 @@ export function PropertiesPanel({ isOpen, onClose }: PropertiesPanelProps) {
         </div>
 
         {/* Tip */}
-        <p className="text-xs text-neutral-500">
+        <p className="text-xs text-muted-foreground">
           Tap to add • Drag onto canvas • Pinch or drag corners to resize
         </p>
       </div>
@@ -187,10 +187,10 @@ export function PropertiesPanel({ isOpen, onClose }: PropertiesPanelProps) {
       <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <SheetContent 
           side="right" 
-          className="w-80 bg-neutral-950/95 border-white/5 text-white lg:hidden p-6 pb-24 overflow-y-auto"
+          className="w-80 bg-background/95 border-border lg:hidden p-6 pb-24 overflow-y-auto"
         >
           <SheetHeader className="p-0 mb-6">
-            <SheetTitle className="text-xs font-bold uppercase tracking-widest text-neutral-500">
+            <SheetTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
               Decorations
             </SheetTitle>
           </SheetHeader>
@@ -199,8 +199,8 @@ export function PropertiesPanel({ isOpen, onClose }: PropertiesPanelProps) {
       </Sheet>
       
       {/* Desktop: Fixed sidebar */}
-      <aside className="hidden lg:block w-80 bg-neutral-950/50 backdrop-blur-xl border-l border-white/5 p-6 overflow-y-auto">
-        <h3 className="text-xs font-bold uppercase tracking-widest text-neutral-500 mb-6">Decorations</h3>
+      <aside className="hidden lg:block w-80 bg-background/50 backdrop-blur-xl border-l border-border p-6 overflow-y-auto">
+        <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-6">Decorations</h3>
         {panelContent}
       </aside>
     </>

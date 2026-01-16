@@ -70,7 +70,7 @@ function PhotoboothEditor() {
 
   // Show editor after template is selected
   return (
-    <div className="h-dvh bg-neutral-950 text-neutral-100 font-sans selection:bg-rose-500/30 flex overflow-hidden">
+    <div className="h-dvh bg-background font-sans selection:bg-rose-500/30 flex overflow-hidden">
       {/* Left Sidebar - Desktop */}
       <ToolSidebar
         captureMode={captureMode}
@@ -88,7 +88,7 @@ function PhotoboothEditor() {
 
         {/* Workspace */}
         <div 
-          className={`flex-1 flex items-center justify-center p-4 md:p-10 pb-24 md:pb-10 bg-[radial-gradient(ellipse_at_center,var(--tw-gradient-stops))] from-neutral-900 via-neutral-950 to-neutral-950 ${
+          className={`flex-1 flex items-center justify-center p-4 md:p-10 pb-24 md:pb-10 bg-[radial-gradient(ellipse_at_center,var(--tw-gradient-stops))] from-muted via-background to-background ${
             viewMode === 'scroll' ? 'overflow-auto' : 'overflow-hidden'
           }`}
         >
@@ -102,12 +102,12 @@ function PhotoboothEditor() {
         {/* View Mode Toggle - Floating */}
         {captureMode === 'upload' && (
           <div className="absolute bottom-28 md:bottom-6 right-4 md:right-6 z-10">
-            <div className="flex bg-neutral-900/90 backdrop-blur-md rounded-full border border-white/10 p-1">
+            <div className="flex bg-secondary/90 backdrop-blur-md rounded-full border border-border p-1">
               <Toggle
                 pressed={viewMode === 'fit'}
                 onPressedChange={() => setViewMode('fit')}
                 size="sm"
-                className="rounded-full px-3 data-[state=on]:bg-white data-[state=on]:text-black"
+                className="rounded-full px-3 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
                 title="Fit to screen"
               >
                 <Maximize2 className="w-4 h-4" />
@@ -117,7 +117,7 @@ function PhotoboothEditor() {
                 pressed={viewMode === 'scroll'}
                 onPressedChange={() => setViewMode('scroll')}
                 size="sm"
-                className="rounded-full px-3 data-[state=on]:bg-white data-[state=on]:text-black"
+                className="rounded-full px-3 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
                 title="Scroll view"
               >
                 <Move className="w-4 h-4" />

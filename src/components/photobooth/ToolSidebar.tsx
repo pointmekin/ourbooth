@@ -45,8 +45,8 @@ function ToolIcon({
           onClick={onClick}
           className={`w-10 h-10 rounded-xl transition-all duration-300 ${
             active 
-              ? "bg-white text-black shadow-[0_0_15px_-3px_rgba(255,255,255,0.3)] hover:bg-white hover:text-black" 
-              : "text-neutral-500 hover:bg-white/10 hover:text-white"
+              ? "bg-primary text-primary-foreground shadow-[0_0_15px_-3px_rgba(255,255,255,0.3)] hover:bg-primary hover:text-primary-foreground" 
+              : "text-muted-foreground hover:bg-muted hover:text-foreground"
           } ${className}`}
         >
           <Icon className="w-5 h-5 opacity-80" />
@@ -76,7 +76,7 @@ export function ToolSidebar({
   };
 
   return (
-    <aside className="hidden md:flex w-20 border-r border-white/5 flex-col items-center py-6 gap-6 z-300 bg-neutral-950/80 backdrop-blur-xl overflow-visible">
+    <aside className="hidden md:flex w-20 border-r border-border flex-col items-center py-6 gap-6 z-300 bg-background/80 backdrop-blur-xl overflow-visible">
       <div className="flex space-y-6 w-full flex-col items-center">
         <ToolIcon
           label="Upload Mode"
@@ -103,7 +103,7 @@ export function ToolSidebar({
               <Button
                 variant="ghost"
                 size="icon"
-                className="w-10 h-10 rounded-xl text-neutral-500 hover:bg-white/10 hover:text-white"
+                className="w-10 h-10 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
               >
                 <ImageIcon className="w-5 h-5 opacity-80" />
               </Button>
@@ -113,15 +113,6 @@ export function ToolSidebar({
             My Photos
           </TooltipContent>
         </Tooltip>
-      )}
-
-      {session && (
-        <Avatar className="w-10 h-10 border border-white/20">
-          <AvatarImage src={session.user.image ?? undefined} alt={session.user.name ?? ""} />
-          <AvatarFallback className="bg-rose-500 text-white text-xs font-bold">
-            {session.user.name?.charAt(0).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
       )}
 
       <ToolIcon
