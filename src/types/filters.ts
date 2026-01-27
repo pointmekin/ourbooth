@@ -2,7 +2,14 @@
  * Filter type identifiers
  * Represents all available filter presets in the system
  */
-export type FilterType = 'noir' | 'sepia' | 'vintage' | 'warm' | 'cool' | 'vivid' | 'muted'
+export type FilterType =
+	| "noir"
+	| "sepia"
+	| "vintage"
+	| "warm"
+	| "cool"
+	| "vivid"
+	| "muted";
 
 /**
  * Filter parameter values
@@ -16,11 +23,11 @@ export type FilterType = 'noir' | 'sepia' | 'vintage' | 'warm' | 'cool' | 'vivid
  * - contrast: 50-150% (100 = normal, <100 = lower contrast, >100 = higher contrast)
  */
 export interface FilterParameters {
-  grayscale: number
-  sepia: number
-  saturation: number
-  brightness: number
-  contrast: number
+	grayscale: number;
+	sepia: number;
+	saturation: number;
+	brightness: number;
+	contrast: number;
 }
 
 /**
@@ -28,8 +35,8 @@ export interface FilterParameters {
  * Combines metadata with filter parameters
  */
 export interface FilterPreset {
-  id: FilterType
-  name: string
-  category: 'bw' | 'color' | 'vintage'
-  parameters: FilterParameters
+	id: FilterType;
+	name: string;
+	category: "bw" | "color" | "vintage";
+	parameters: FilterParameters;
 }
