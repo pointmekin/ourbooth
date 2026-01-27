@@ -33,7 +33,13 @@ Decimal phases appear between their surrounding integers in numeric order.
 3. Calibration test suite validates CSS→Sharp filter consistency with delta-E < 2.0 tolerance
 4. FilterUtils module converts CSS filter values to Sharp operations correctly
 
-**Plans**: TBD
+**Plans:** 4 plans
+
+Plans:
+- [ ] 01-01-filter-types-and-presets-PLAN.md — Define filter types and create 7 filter presets
+- [ ] 01-02-filter-state-store-PLAN.md — Create Zustand store for filter state management
+- [ ] 01-03-filter-utilities-PLAN.md — Build TDD-tested CSS/Sharp conversion utilities
+- [ ] 01-04-calibration-test-suite-PLAN.md — Create delta-E validation tests
 
 ### Phase 2: Filter Preview UI
 
@@ -90,7 +96,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Filter Foundations | 0/TBD | Not started | - |
+| 1. Filter Foundations | 0/4 | Not started | - |
 | 2. Filter Preview UI | 0/TBD | Not started | - |
 | 3. Filter Export Processing | 0/TBD | Not started | - |
 | 4. Polish & UX Enhancements | 0/TBD | Not started | - |
