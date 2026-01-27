@@ -3,11 +3,11 @@ import sharp from 'sharp';
 /**
  * Generate a calibration test image with known color values
  *
- * The image is a 100x100px gradient from white to black with a gray middle band.
- * This provides test points across the full brightness range:
- * - Top 33%: Pure white (#ffffff)
- * - Middle 33%: Middle gray (#808080)
- * - Bottom 33%: Pure black (#000000)
+ * The image is a 100x100px with 4 color bands:
+ * - Top 25%: Pure red (#ff0000) - for saturation tests
+ * - 25-50%: Pure white (#ffffff) - for brightness tests
+ * - 50-75%: Middle gray (#808080) - mid-range reference
+ * - Bottom 25%: Pure black (#000000) - for contrast tests
  *
  * @returns Buffer containing PNG test image
  */
@@ -15,17 +15,17 @@ export async function getCalibrationTestImage(): Promise<Buffer> {
 	const width = 100;
 	const height = 100;
 
-	// Create SVG with gradient from white to black
+	// Create SVG with horizontal color bands
 	const svg = `
     <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="grad" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stop-color="#ffffff"/>
-          <stop offset="50%" stop-color="#808080"/>
-          <stop offset="100%" stop-color="#000000"/>
-        </linearGradient>
-      </defs>
-      <rect width="${width}" height="${height}" fill="url(#grad)"/>
+      <!-- Pure red band for saturation tests -->
+      <rect x="0" y="0" width="${width}" height="25" fill="#ff0000"/>
+      <!-- Pure white band for brightness tests -->
+      <rect x="0" y="25" width="${width}" height="25" fill="#ffffff"/>
+      <!-- Middle gray band -->
+      <rect x="0" y="50" width="${width}" height="25" fill="#808080"/>
+      <!-- Pure black band for contrast tests -->
+      <rect x="0" y="75" width="${width}" height="25" fill="#000000"/>
     </svg>
   `;
 
