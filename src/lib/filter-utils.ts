@@ -1,5 +1,10 @@
 import type { FilterParameters } from '@/types/filters';
 
+// Constants for filter scaling
+const BASELINE_INTENSITY = 100; // Normal/neutral value for brightness/contrast/saturation
+const MAX_PIXEL_VALUE = 255; // Max pixel value for contrast linear adjustment
+const SEPIA_DIVISOR = 200; // Divisor for sepia saturation reduction
+
 /**
  * Sharp modifier parameters for image processing
  * Maps filter parameters to Sharp API operations
@@ -17,16 +22,16 @@ export interface SharpModifiers {
 
 /**
  * Scale a filter parameter by intensity
- * For brightness/contrast: interpolates between 100 (baseline) and the target value
+ * For brightness/contrast: interpolates between BASELINE_INTENSITY and the target value
  * For other parameters: interpolates between 0 and the target value
  *
  * @param value - Target parameter value
  * @param intensity - Intensity percentage (0-100)
- * @param baseline - Baseline value (default 0, use 100 for brightness/contrast)
+ * @param baseline - Baseline value (default 0, use BASELINE_INTENSITY for brightness/contrast)
  * @returns Scaled parameter value
  */
 function scaleParameter(value: number, intensity: number, baseline = 0): number {
-	const intensityRatio = intensity / 100;
+	const intensityRatio = intensity / BASELINE_INTENSITY;
 	return baseline + (value - baseline) * intensityRatio;
 }
 
@@ -51,9 +56,9 @@ export function getCssFilterValue(
 	// Scale each parameter
 	const grayscale = scaleParameter(parameters.grayscale, intensity);
 	const sepia = scaleParameter(parameters.sepia, intensity);
-	const saturate = scaleParameter(parameters.saturation, intensity, 100);
-	const brightness = scaleParameter(parameters.brightness, intensity, 100);
-	const contrast = scaleParameter(parameters.contrast, intensity, 100);
+	const saturate = scaleParameter(parameters.saturation, intensity, BASELINE_INTENSITY);
+	const brightness = scaleParameter(parameters.brightness, intensity, BASELINE_INTENSITY);
+	const contrast = scaleParameter(parameters.contrast, intensity, BASELINE_INTENSITY);
 
 	// Build filter string with non-zero values only
 	// Order: grayscale, sepia, saturate, brightness, contrast
@@ -63,15 +68,15 @@ export function getCssFilterValue(
 	if (sepia > 0) {
 		filters.push(`sepia(${sepia}%)`);
 	}
-	if (saturate !== 100 && saturate > 0) {
+	if (saturate !== BASELINE_INTENSITY && saturate > 0) {
 		// Only include if not baseline and not zero
 		filters.push(`saturate(${saturate}%)`);
 	}
-	if (brightness !== 100) {
+	if (brightness !== BASELINE_INTENSITY) {
 		// Only include if not baseline
 		filters.push(`brightness(${brightness}%)`);
 	}
-	if (contrast !== 100) {
+	if (contrast !== BASELINE_INTENSITY) {
 		// Only include if not baseline
 		filters.push(`contrast(${contrast}%)`);
 	}
@@ -93,8 +98,8 @@ export function getSharpModifiers(
 	// Zero intensity means identity values (no change)
 	if (intensity <= 0) {
 		return {
-			saturation: 100,
-			brightness: 100,
+			saturation: BASELINE_INTENSITY,
+			brightness: BASELINE_INTENSITY,
 			contrastLow: null,
 			contrastHigh: null,
 		};
@@ -103,9 +108,9 @@ export function getSharpModifiers(
 	// Scale each parameter
 	const grayscale = scaleParameter(parameters.grayscale, intensity);
 	const sepia = scaleParameter(parameters.sepia, intensity);
-	const saturation = scaleParameter(parameters.saturation, intensity, 100);
-	const brightness = scaleParameter(parameters.brightness, intensity, 100);
-	const contrast = scaleParameter(parameters.contrast, intensity, 100);
+	const saturation = scaleParameter(parameters.saturation, intensity, BASELINE_INTENSITY);
+	const brightness = scaleParameter(parameters.brightness, intensity, BASELINE_INTENSITY);
+	const contrast = scaleParameter(parameters.contrast, intensity, BASELINE_INTENSITY);
 
 	// Map to Sharp operations
 	let sharpSaturation = saturation;
@@ -118,27 +123,27 @@ export function getSharpModifiers(
 	// Sepia reduces saturation and applies warm tint
 	else if (sepia > 0) {
 		// Sepia in Sharp is simulated by reducing saturation
-		sharpSaturation = saturation * (1 - sepia / 200);
+		sharpSaturation = saturation * (1 - sepia / SEPIA_DIVISOR);
 	}
 
 	// Map contrast to linear adjustment parameters
 	// Sharp's linear() uses slope/intercept to adjust contrast
-	// Contrast < 100: expand midtones (reduce contrast)
-	// Contrast > 100: compress midtones (increase contrast)
+	// Contrast < BASELINE_INTENSITY: expand midtones (reduce contrast)
+	// Contrast > BASELINE_INTENSITY: compress midtones (increase contrast)
 	let contrastLow: number | null = null;
 	let contrastHigh: number | null = null;
 
-	if (contrast !== 100) {
-		if (contrast > 100) {
+	if (contrast !== BASELINE_INTENSITY) {
+		if (contrast > BASELINE_INTENSITY) {
 			// Increase contrast: slope > 1
-			const slope = contrast / 100;
-			contrastLow = -255 * (slope - 1);
-			contrastHigh = 255 + 255 * (slope - 1);
+			const slope = contrast / BASELINE_INTENSITY;
+			contrastLow = -MAX_PIXEL_VALUE * (slope - 1);
+			contrastHigh = MAX_PIXEL_VALUE + MAX_PIXEL_VALUE * (slope - 1);
 		} else {
 			// Decrease contrast: slope < 1
-			const slope = contrast / 100;
-			contrastLow = 255 * (1 - slope);
-			contrastHigh = 255 - 255 * (1 - slope);
+			const slope = contrast / BASELINE_INTENSITY;
+			contrastLow = MAX_PIXEL_VALUE * (1 - slope);
+			contrastHigh = MAX_PIXEL_VALUE - MAX_PIXEL_VALUE * (1 - slope);
 		}
 	}
 
