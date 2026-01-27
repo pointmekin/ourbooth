@@ -10,27 +10,27 @@ See: .planning/PROJECT.md (updated 2026-01-28)
 ## Current Position
 
 Phase: 1 of 4 (Filter Foundations)
-Plan: 2 of TBD in current phase
+Plan: 3 of TBD in current phase
 Status: In progress
-Last activity: 2026-01-28 — Completed 01-02-filter-state-store-PLAN.md
+Last activity: 2026-01-28 — Completed 01-03-filter-utilities-PLAN.md
 
-Progress: [███░░░░░░░░] 20%
+Progress: [████░░░░░░░] 30%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: 1 min
-- Total execution time: 0.04 hours
+- Total plans completed: 3
+- Average duration: 2 min
+- Total execution time: 0.05 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-filter-foundations | 2 | TBD | 1 min |
+| 01-filter-foundations | 3 | TBD | 1-2 min |
 
 **Recent Trend:**
-- Last 5 plans: 1min (01-01), 1min (01-02)
+- Last 5 plans: 1min (01-01), 1min (01-02), 3min (01-03)
 - Trend: Steady progress on phase 1
 
 *Updated after each plan completion*
@@ -49,6 +49,9 @@ Recent decisions affecting current work:
 - [Code Organization]: Following templates.ts pattern for filter definitions and helper functions
 - [Filter State]: Zustand store with persist middleware for global filter state management and localStorage persistence
 - [Persistence Strategy]: Used Zustand persist middleware with SSR-safe skipHydration check for automatic localStorage synchronization
+- [Filter Utilities]: TDD-tested conversion functions (getCssFilterValue, getSharpModifiers) with intensity scaling (0-100%)
+- [Sharp Mapping]: Grayscale forced saturation to 0, sepia reduces saturation, contrast maps to linear() with slope calculation
+- [Named Constants]: BASELINE_INTENSITY (100), MAX_PIXEL_VALUE (255), SEPIA_DIVISOR (200) extracted for maintainability
 
 ### Pending Todos
 
@@ -61,5 +64,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-01-28 (plan execution)
-Stopped at: Completed 01-02-filter-state-store-PLAN.md
+Stopped at: Completed 01-03-filter-utilities-PLAN.md
 Resume file: None
