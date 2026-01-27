@@ -82,15 +82,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FILTER-10 | Phase 2 | Pending |
 | FILTER-11 | Phase 3 | Pending |
 | FILTER-12 | Phase 1 | Pending |
-| FILTER-13 | Phase 3 | Pending |
+| FILTER-13 | Phase 1, Phase 3 | Pending |
 | FILTER-14 | Phase 1 | Pending |
 | FILTER-15 | Phase 2 | Pending |
 
 **Coverage:**
 - v1 requirements: 15 total
-- Mapped to phases: 0 (will be populated by roadmap)
-- Unmapped: 15 ⚠️
+- Mapped to phases: 15 ✓
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-01-28*
-*Last updated: 2026-01-28 after initial definition*
+*Last updated: 2026-01-28 after roadmap creation*
