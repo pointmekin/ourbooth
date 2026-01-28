@@ -10,29 +10,29 @@ See: .planning/PROJECT.md (updated 2026-01-28)
 ## Current Position
 
 Phase: 2 of 4 (Filter Preview UI)
-Plan: 4 of 5 in current phase
-Status: In progress
-Last activity: 2026-01-28 — Completed 02-04-photostrip-filter-integration-PLAN.md
+Plan: 5 of 5 in current phase
+Status: Phase complete
+Last activity: 2026-01-28 — Completed 02-05-tool-sidebar-integration-PLAN.md
 
-Progress: [██████████░] 80%
+Progress: [████████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
-- Average duration: 13 min
-- Total execution time: 1.78 hours
+- Total plans completed: 9
+- Average duration: 12 min
+- Total execution time: 1.80 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-filter-foundations | 4 | 4 | 26 min |
-| 02-filter-preview-ui | 4 | 5 | 1 min |
+| 02-filter-preview-ui | 5 | 5 | 1 min |
 
 **Recent Trend:**
-- Last 5 plans: 99min (01-04), 1min (02-01), 1min (02-02), 1min (02-03), 1min (02-04)
-- Trend: Phase 2 nearly complete, UI components built rapidly
+- Last 5 plans: 99min (01-04), 1min (02-01), 1min (02-02), 1min (02-03), 1min (02-04), 1min (02-05)
+- Trend: Phase 2 complete, UI components built rapidly
 
 *Updated after each plan completion*
 
@@ -67,6 +67,10 @@ Recent decisions affecting current work:
 - [PhotoStrip Filter Integration]: CSS filter applied to all photos via style prop using Zustand selector and useMemo
 - [Global Filter Application]: All photos in strip share same filterStyle object reference, filter applies to entire strip
 - [Empty Object Pattern]: Returns {} when no filter selected (clean DOM, no inline style)
+- [Unified Tool State Pattern]: activeTool: 'stickers' | 'filters' | null enables multiple tools with single state variable
+- [Tool Toggle Pattern]: Clicking active tool closes panel (null), clicking inactive tool opens it
+- [Fixed Panel Overlay]: Filter panel renders as fixed sidebar with z-50, backdrop-blur, and close button
+- [Mobile Toolbar Active State]: Conditional styling (bg-white/20 active, bg-white/5 inactive) provides visual feedback
 
 ### Pending Todos
 
@@ -80,5 +84,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-01-28 (plan execution)
-Stopped at: Completed 02-04-photostrip-filter-integration-PLAN.md
+Stopped at: Completed 02-05-tool-sidebar-integration-PLAN.md
 Resume file: None
