@@ -5,6 +5,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { authClient } from '@/lib/auth-client'
 import { exportPhotoboothFn } from '@/server/export'
 import { usePhotoboothStore, RESOLUTION_OPTIONS, type ExportResolution } from '@/stores/photobooth-store'
+import { useFilterStore } from '@/stores/filter-store'
 import {
   Sheet,
   SheetContent,
@@ -23,16 +24,18 @@ export function ExportSheet({ isOpen, onClose }: ExportSheetProps) {
   const navigate = useNavigate()
   const { data: session } = authClient.useSession()
   
-  const { 
-    images, 
-    stickers, 
-    selectedTemplate, 
-    exportType, 
-    setExportType, 
-    exportResolution, 
+  const {
+    images,
+    stickers,
+    selectedTemplate,
+    exportType,
+    setExportType,
+    exportResolution,
     setExportResolution,
     customFooterText
   } = usePhotoboothStore()
+
+  const { selectedFilter, intensity } = useFilterStore()
   
   const [isExporting, setIsExporting] = useState(false)
   const [exportedUrl, setExportedUrl] = useState<string | null>(null)
@@ -77,6 +80,9 @@ export function ExportSheet({ isOpen, onClose }: ExportSheetProps) {
           previewHeight,
           scaleFactor,
           customFooterText: customFooterText || undefined,
+          // Send filter state with export
+          filterType: selectedFilter,
+          filterIntensity: intensity,
         }
       })
 
@@ -222,7 +228,7 @@ export function ExportSheet({ isOpen, onClose }: ExportSheetProps) {
                 {isExporting ? (
                   <>
                     <Sparkles className="w-5 h-5 mr-2 animate-spin" />
-                    Creating magic...
+                    Processing...
                   </>
                 ) : (
                   <>
