@@ -79,7 +79,13 @@ Plans:
 3. Export processing handles batch photo strips without concurrency bottlenecks
 4. Export validates filter parameters to prevent extreme values causing processing errors
 
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 03-01-filter-processor-module-PLAN.md — Create image-processor.ts with applyFiltersToImage()
+- [ ] 03-02-photostrip-filter-integration-PLAN.md — Integrate filter processing into image-generator.ts
+- [ ] 03-03-export-filter-integration-PLAN.md — Add filter parameters to export server function
+- [ ] 03-04-ui-filter-integration-PLAN.md — Connect ExportSheet UI to filter store
 
 ### Phase 4: Polish & UX Enhancements
 
@@ -105,5 +111,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Filter Foundations | 4/4 | Complete | 2025-01-27 |
 | 2. Filter Preview UI | 5/5 | Complete | 2026-01-28 |
-| 3. Filter Export Processing | 0/TBD | Not started | - |
+| 3. Filter Export Processing | 0/4 | Not started | - |
 | 4. Polish & UX Enhancements | 0/TBD | Not started | - |
