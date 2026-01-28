@@ -12,8 +12,8 @@ This roadmap delivers an Instagram-style color filter system for the photobooth 
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Filter Foundations** - Build filter types, state, and calibration infrastructure
-- [ ] **Phase 2: Filter Preview UI** - Implement complete filter selection and preview interface
+- [x] **Phase 1: Filter Foundations** - Build filter types, state, and calibration infrastructure
+- [x] **Phase 2: Filter Preview UI** - Implement complete filter selection and preview interface
 - [ ] **Phase 3: Filter Export Processing** - Integrate Sharp filter processing for export
 - [ ] **Phase 4: Polish & UX Enhancements** - Add intensity presets and UX refinements
 
@@ -36,10 +36,10 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans:** 4 plans
 
 Plans:
-- [ ] 01-01-filter-types-and-presets-PLAN.md — Define filter types and create 7 filter presets
-- [ ] 01-02-filter-state-store-PLAN.md — Create Zustand store for filter state management
-- [ ] 01-03-filter-utilities-PLAN.md — Build TDD-tested CSS/Sharp conversion utilities
-- [ ] 01-04-calibration-test-suite-PLAN.md — Create delta-E validation tests
+- [x] 01-01-filter-types-and-presets-PLAN.md — Define filter types and create 7 filter presets
+- [x] 01-02-filter-state-store-PLAN.md — Create Zustand store for filter state management
+- [x] 01-03-filter-utilities-PLAN.md — Build TDD-tested CSS/Sharp conversion utilities
+- [x] 01-04-calibration-test-suite-PLAN.md — Create delta-E validation tests
 
 ### Phase 2: Filter Preview UI
 
@@ -59,11 +59,11 @@ Plans:
 **Plans:** 5 plans
 
 Plans:
-- [ ] 02-01-filter-thumbnail-component-PLAN.md — Create memoized FilterThumbnail component with CSS preview
-- [ ] 02-02-intensity-slider-component-PLAN.md — Build IntensitySlider with native range input
-- [ ] 02-03-filter-preview-panel-container-PLAN.md — Assemble FilterPreviewPanel with thumbnail strip
-- [ ] 02-04-photostrip-filter-integration-PLAN.md — Apply CSS filters to PhotoStrip images
-- [ ] 02-05-tool-sidebar-integration-PLAN.md — Integrate filter tool into sidebar and create route
+- [x] 02-01-filter-thumbnail-component-PLAN.md — Create memoized FilterThumbnail component with CSS preview
+- [x] 02-02-intensity-slider-component-PLAN.md — Build IntensitySlider with native range input
+- [x] 02-03-filter-preview-panel-container-PLAN.md — Assemble FilterPreviewPanel with thumbnail strip
+- [x] 02-04-photostrip-filter-integration-PLAN.md — Apply CSS filters to PhotoStrip images
+- [x] 02-05-tool-sidebar-integration-PLAN.md — Integrate filter tool into sidebar and create route
 
 ### Phase 3: Filter Export Processing
 
@@ -104,6 +104,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Filter Foundations | 4/4 | Complete | 2025-01-27 |
-| 2. Filter Preview UI | 0/5 | Not started | - |
+| 2. Filter Preview UI | 5/5 | Complete | 2026-01-28 |
 | 3. Filter Export Processing | 0/TBD | Not started | - |
 | 4. Polish & UX Enhancements | 0/TBD | Not started | - |

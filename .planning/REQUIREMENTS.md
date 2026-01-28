@@ -70,21 +70,21 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FILTER-01 | Phase 2 | Pending |
-| FILTER-02 | Phase 2 | Pending |
-| FILTER-03 | Phase 2 | Pending |
-| FILTER-04 | Phase 2 | Pending |
-| FILTER-05 | Phase 2 | Pending |
-| FILTER-06 | Phase 2 | Pending |
-| FILTER-07 | Phase 2 | Pending |
+| FILTER-01 | Phase 2 | Complete |
+| FILTER-02 | Phase 2 | Complete |
+| FILTER-03 | Phase 2 | Complete |
+| FILTER-04 | Phase 2 | Complete |
+| FILTER-05 | Phase 2 | Complete |
+| FILTER-06 | Phase 2 | Complete |
+| FILTER-07 | Phase 2 | Complete |
 | FILTER-08 | Phase 4 | Pending |
-| FILTER-09 | Phase 2 | Pending |
-| FILTER-10 | Phase 2 | Pending |
+| FILTER-09 | Phase 2 | Complete |
+| FILTER-10 | Phase 2 | Complete |
 | FILTER-11 | Phase 3 | Pending |
-| FILTER-12 | Phase 1 | Pending |
+| FILTER-12 | Phase 1 | Complete |
 | FILTER-13 | Phase 1, Phase 3 | Pending |
-| FILTER-14 | Phase 1 | Pending |
-| FILTER-15 | Phase 2 | Pending |
+| FILTER-14 | Phase 1 | Complete |
+| FILTER-15 | Phase 2 | Complete |
 
 **Coverage:**
 - v1 requirements: 15 total
