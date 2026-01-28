@@ -25,12 +25,12 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [ ] **FILTER-09**: Selected filter applies to all photos in strip (global application)
 - [ ] **FILTER-10**: Filter preview applies to captured/uploaded photos (not live camera feed)
-- [ ] **FILTER-11**: Exported image includes filter effects applied via Sharp processing
+- [x] **FILTER-11**: Exported image includes filter effects applied via Sharp processing
 
 ### Technical Foundation
 
 - [ ] **FILTER-12**: System uses CSS filters for real-time preview
-- [ ] **FILTER-13**: System uses Sharp operations matching CSS filters for export
+- [x] **FILTER-13**: System uses Sharp operations matching CSS filters for export
 - [ ] **FILTER-14**: Filter state managed in Zustand store
 - [ ] **FILTER-15**: Filter UI integrated into existing ToolSidebar component
 
@@ -80,9 +80,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FILTER-08 | Phase 4 | Pending |
 | FILTER-09 | Phase 2 | Complete |
 | FILTER-10 | Phase 2 | Complete |
-| FILTER-11 | Phase 3 | Pending |
+| FILTER-11 | Phase 3 | Complete |
 | FILTER-12 | Phase 1 | Complete |
-| FILTER-13 | Phase 1, Phase 3 | Pending |
+| FILTER-13 | Phase 1, Phase 3 | Complete |
 | FILTER-14 | Phase 1 | Complete |
 | FILTER-15 | Phase 2 | Complete |
 
