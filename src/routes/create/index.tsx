@@ -13,6 +13,7 @@ import {
   MobileToolbar,
   TemplateGallery,
   ExportSheet,
+  FilterPreviewPanel,
 } from '@/components/photobooth'
 
 import { Photobooth3DExperience } from '@/components/3d/Experience'
@@ -28,7 +29,7 @@ function PhotoboothEditor() {
   
   const [hasStarted, setHasStarted] = useState(false)
   const [captureMode, setCaptureMode] = useState<'upload' | 'camera'>('upload')
-  const [isPropertiesOpen, setIsPropertiesOpen] = useState(false)
+  const [activeTool, setActiveTool] = useState<'stickers' | 'filters' | null>(null)
   const [isExportOpen, setIsExportOpen] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('fit')
   // Unique key to force 3D experience remount on browser navigation
@@ -75,6 +76,8 @@ function PhotoboothEditor() {
       <ToolSidebar
         captureMode={captureMode}
         onCaptureModeChange={handleCaptureModeChange}
+        activeTool={activeTool}
+        onToolChange={setActiveTool}
       />
 
       {/* Main Canvas Area */}
@@ -130,15 +133,31 @@ function PhotoboothEditor() {
 
       {/* Right Sidebar - Properties */}
       <PropertiesPanel
-        isOpen={isPropertiesOpen}
-        onClose={() => setIsPropertiesOpen(false)}
+        isOpen={activeTool === 'stickers'}
+        onClose={() => setActiveTool(null)}
       />
+
+      {/* Filter Panel */}
+      {activeTool === 'filters' && (
+        <div className="fixed inset-y-0 right-0 w-80 bg-background/95 backdrop-blur-xl border-l border-border shadow-xl z-50 overflow-y-auto">
+          <div className="p-4">
+            <button
+              onClick={() => setActiveTool(null)}
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+            >
+              Close
+            </button>
+            <FilterPreviewPanel />
+          </div>
+        </div>
+      )}
 
       {/* Mobile Bottom Toolbar */}
       <MobileToolbar
         captureMode={captureMode}
         onCaptureModeChange={handleCaptureModeChange}
-        onStickersToggle={() => setIsPropertiesOpen(!isPropertiesOpen)}
+        activeTool={activeTool}
+        onToolChange={setActiveTool}
         onExportToggle={() => setIsExportOpen(true)}
       />
 
