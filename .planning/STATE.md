@@ -5,33 +5,34 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Users can enhance their photobooth photos with one-click color filters applied consistently in export.
-**Current focus:** Phase 1: Filter Foundations
+**Current focus:** Phase 2: Filter Preview UI
 
 ## Current Position
 
-Phase: 1 of 4 (Filter Foundations)
-Plan: 4 of TBD in current phase
+Phase: 2 of 4 (Filter Preview UI)
+Plan: 1 of 5 in current phase
 Status: In progress
-Last activity: 2026-01-28 — Completed 01-04-calibration-test-suite-PLAN.md
+Last activity: 2026-01-28 — Completed 02-01-filter-thumbnail-component-PLAN.md
 
-Progress: [██████░░░░░] 40%
+Progress: [███████░░░░] 47%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: 26 min
-- Total execution time: 1.73 hours
+- Total plans completed: 5
+- Average duration: 21 min
+- Total execution time: 1.75 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-filter-foundations | 4 | TBD | 26 min |
+| 01-filter-foundations | 4 | 4 | 26 min |
+| 02-filter-preview-ui | 1 | 5 | 1 min |
 
 **Recent Trend:**
-- Last 5 plans: 1min (01-01), 1min (01-02), 3min (01-03), 99min (01-04)
-- Trend: Phase 1 complete except filter UI
+- Last 5 plans: 1min (01-01), 1min (01-02), 3min (01-03), 99min (01-04), 1min (02-01)
+- Trend: Phase 2 started, thumbnail component completed quickly
 
 *Updated after each plan completion*
 
@@ -55,6 +56,9 @@ Recent decisions affecting current work:
 - [Calibration Testing]: CIE Delta E 1976 algorithm with LAB color space conversion for validating CSS/Sharp filter consistency (tolerance < 2.0)
 - [Test Fixture]: 4-band test image (red, white, gray, black) covers full brightness range for accurate delta-E calculation
 - [Known Issue]: Grayscale intensity scaling bug in getSharpModifiers - saturation forced to 0 at any grayscale level, needs interpolation fix
+- [Filter Thumbnail]: React.memo optimization with Zustand selector pattern prevents re-renders during slider interaction
+- [Thumbnail Intensity]: Fixed at 75% for consistent visual previews, independent of user's intensity slider setting
+- [Null Filter Pattern]: Using null to represent "Original" (no filter) option in filter selection UI
 
 ### Pending Todos
 
@@ -68,5 +72,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-01-28 (plan execution)
-Stopped at: Completed 01-04-calibration-test-suite-PLAN.md
+Stopped at: Completed 02-01-filter-thumbnail-component-PLAN.md
 Resume file: None
