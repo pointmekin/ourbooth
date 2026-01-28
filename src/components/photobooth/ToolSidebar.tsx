@@ -21,6 +21,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 interface ToolSidebarProps {
   captureMode: "upload" | "camera";
   onCaptureModeChange: (mode: "upload" | "camera") => void;
+  activeTool?: "stickers" | "filters" | null;
+  onToolChange?: (tool: "stickers" | "filters" | null) => void;
 }
 
 function ToolIcon({
@@ -62,6 +64,8 @@ function ToolIcon({
 export function ToolSidebar({
   captureMode,
   onCaptureModeChange,
+  activeTool,
+  onToolChange,
 }: ToolSidebarProps) {
   const navigate = useNavigate();
   const { data: session } = authClient.useSession();
@@ -90,8 +94,18 @@ export function ToolSidebar({
           active={captureMode === "camera"}
           onClick={() => onCaptureModeChange("camera")}
         />
-        <ToolIcon label="Stickers" icon={Smile} />
-        <ToolIcon label="Filters" icon={Wand2} />
+        <ToolIcon
+          label="Stickers"
+          icon={Smile}
+          active={activeTool === "stickers"}
+          onClick={() => onToolChange?.(activeTool === "stickers" ? null : "stickers")}
+        />
+        <ToolIcon
+          label="Filters"
+          icon={Wand2}
+          active={activeTool === "filters"}
+          onClick={() => onToolChange?.(activeTool === "filters" ? null : "filters")}
+        />
       </div>
 
       <div className="flex-1" />
