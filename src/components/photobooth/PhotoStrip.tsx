@@ -1,5 +1,8 @@
-import { useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import { usePhotoboothStore, type StickerType } from '@/stores/photobooth-store'
+import { useFilterStore } from '@/stores/filter-store'
+import { getCssFilterValue } from '@/lib/filter-utils'
+import { getFilterById } from '@/constants/filters'
 import { ResizableSticker } from './ResizableSticker'
 
 type ViewMode = 'fit' | 'scroll'
@@ -10,13 +13,29 @@ interface PhotoStripProps {
   viewMode?: ViewMode
 }
 
-export function PhotoStrip({ 
-  isExporting = false, 
+export function PhotoStrip({
+  isExporting = false,
   onFileUpload,
   viewMode = 'fit',
 }: PhotoStripProps) {
   const stripRef = useRef<HTMLDivElement>(null)
   const { images, stickers, selectedTemplate, customFooterText, addSticker } = usePhotoboothStore()
+
+  // Subscribe to filter state
+  const { selectedFilter, intensity } = useFilterStore((s) => ({
+    selectedFilter: s.selectedFilter,
+    intensity: s.intensity
+  }))
+
+  // Memoize filter style for performance
+  const filterStyle = useMemo(() => {
+    if (!selectedFilter) return {}
+    const preset = getFilterById(selectedFilter)
+    if (!preset) return {}
+    return {
+      filter: getCssFilterValue(preset.parameters, intensity)
+    }
+  }, [selectedFilter, intensity])
   
   // Fallback if no template selected
   if (!selectedTemplate) {
@@ -124,10 +143,11 @@ export function PhotoStrip({
               )}
               
               {images[i] ? (
-                <img 
-                  src={images[i]!} 
-                  alt={`Slot ${i}`} 
+                <img
+                  src={images[i]!}
+                  alt={`Slot ${i}`}
                   className="w-full h-full object-cover"
+                  style={filterStyle}
                 />
               ) : (
                 <div className={`absolute inset-0 flex items-center justify-center ${!isExporting ? 'group-hover/slot:text-neutral-400 transition-colors' : ''}`}>
