@@ -8,4 +8,5 @@ export { MobileToolbar } from './MobileToolbar'
 export { TemplateGallery } from './TemplateGallery'
 export { ResizableSticker } from './ResizableSticker'
 export { FilterThumbnail } from './FilterThumbnail'
+export { IntensitySlider } from './IntensitySlider'
 
