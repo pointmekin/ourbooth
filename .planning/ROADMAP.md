@@ -56,7 +56,14 @@ Plans:
 4. User can adjust filter intensity using slider (0-100%) and see real-time preview as slider moves
 5. User can reset to original (no filter) via dedicated button or "Original" thumbnail
 
-**Plans**: TBD
+**Plans:** 5 plans
+
+Plans:
+- [ ] 02-01-filter-thumbnail-component-PLAN.md — Create memoized FilterThumbnail component with CSS preview
+- [ ] 02-02-intensity-slider-component-PLAN.md — Build IntensitySlider with native range input
+- [ ] 02-03-filter-preview-panel-container-PLAN.md — Assemble FilterPreviewPanel with thumbnail strip
+- [ ] 02-04-photostrip-filter-integration-PLAN.md — Apply CSS filters to PhotoStrip images
+- [ ] 02-05-tool-sidebar-integration-PLAN.md — Integrate filter tool into sidebar and create route
 
 ### Phase 3: Filter Export Processing
 
@@ -96,7 +103,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Filter Foundations | 0/4 | Not started | - |
-| 2. Filter Preview UI | 0/TBD | Not started | - |
+| 1. Filter Foundations | 4/4 | Complete | 2025-01-27 |
+| 2. Filter Preview UI | 0/5 | Not started | - |
 | 3. Filter Export Processing | 0/TBD | Not started | - |
 | 4. Polish & UX Enhancements | 0/TBD | Not started | - |
