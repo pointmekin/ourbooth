@@ -63,6 +63,7 @@ export function IntensitySlider({ disabled = false }: IntensitySliderProps) {
 					value={intensity}
 					onChange={(e) => setIntensity(Number(e.target.value))}
 					disabled={disabled || !hasFilter}
+					list="intensity-presets"
 					className="w-full h-2 bg-muted rounded-full appearance-none cursor-pointer
             [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4
             [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full
@@ -74,6 +75,11 @@ export function IntensitySlider({ disabled = false }: IntensitySliderProps) {
             [&::-moz-range-thumb]:transition-all [&::-moz-range-thumb]:hover:scale-125
             disabled:opacity-50 disabled:cursor-not-allowed"
 				/>
+				<datalist id="intensity-presets">
+					{INTENSITY_PRESETS.map((preset) => (
+						<option key={preset} value={preset} />
+					))}
+				</datalist>
 			</div>
 
 			{/* Hint when no filter selected */}
