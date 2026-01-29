@@ -100,7 +100,12 @@ Plans:
 2. Slider UX provides smooth feedback when selecting preset values
 3. Preview performance remains smooth (60fps) with filters applied on Safari browsers
 
-**Plans**: TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 04-01-intensity-presets-ui-PLAN.md — Add preset tick marks (0%, 25%, 50%, 75%, 100%) with click-to-jump
+- [ ] 04-02-snap-logic-PLAN.md — Implement snap-to-preset behavior with 5% threshold
+- [ ] 04-03-performance-optimization-PLAN.md — Add React 19 useTransition for non-blocking updates
 
 ## Progress
 
@@ -112,4 +117,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Filter Foundations | 4/4 | Complete | 2025-01-27 |
 | 2. Filter Preview UI | 5/5 | Complete | 2026-01-28 |
 | 3. Filter Export Processing | 4/4 | Complete | 2026-01-28 |
-| 4. Polish & UX Enhancements | 0/TBD | Not started | - |
+| 4. Polish & UX Enhancements | 0/3 | Not started | - |
