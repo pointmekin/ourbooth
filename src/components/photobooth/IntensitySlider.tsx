@@ -2,6 +2,7 @@ import { useFilterStore } from '@/stores/filter-store'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { RotateCcw } from 'lucide-react'
+import * as React from 'react'
 
 const DEFAULT_INTENSITY = 75
 const MIN_INTENSITY = 0
@@ -12,6 +13,27 @@ type IntensityPreset = typeof INTENSITY_PRESETS[number]
 
 // Snap threshold: distance in percentage where snap activates
 const SNAP_THRESHOLD = 5
+
+/**
+ * Custom hook for snapping intensity values to nearest preset
+ * @param value - Current intensity value
+ * @param threshold - Distance within which snap activates
+ * @returns Snapped value (or original if not near preset)
+ */
+function useSnapToPreset(value: number, threshold: number = SNAP_THRESHOLD) {
+	return React.useMemo(() => {
+		// Find nearest preset
+		const nearestPreset = INTENSITY_PRESETS.reduce((nearest, preset) => {
+			const currentDistance = Math.abs(value - preset)
+			const nearestDistance = Math.abs(value - nearest)
+			return currentDistance < nearestDistance ? preset : nearest
+		}, INTENSITY_PRESETS[0])
+
+		// Snap to preset if within threshold
+		const distance = Math.abs(value - nearestPreset)
+		return distance <= threshold ? nearestPreset : value
+	}, [value, threshold])
+}
 
 interface IntensitySliderProps {
 	disabled?: boolean
