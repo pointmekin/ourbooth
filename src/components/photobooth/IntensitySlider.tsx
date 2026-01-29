@@ -52,7 +52,7 @@ export function IntensitySlider({ disabled = false }: IntensitySliderProps) {
 	const [dragStartValue, setDragStartValue] = React.useState(intensity)
 
 	const handleReset = () => {
-		setIntensity(DEFAULT_INTENSITY)
+		startTransition(() => setIntensity(DEFAULT_INTENSITY))
 	}
 
 	// Calculate snapped value for display
@@ -61,7 +61,7 @@ export function IntensitySlider({ disabled = false }: IntensitySliderProps) {
 	const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const rawValue = Number(e.target.value)
 
-		// Apply snap when dragging
+		// Apply snap when dragging - use transition for smooth non-blocking updates
 		if (isDragging) {
 			const nearestPreset = INTENSITY_PRESETS.reduce((nearest, preset) => {
 				const currentDistance = Math.abs(rawValue - preset)
@@ -74,16 +74,16 @@ export function IntensitySlider({ disabled = false }: IntensitySliderProps) {
 			// Check if we're "breaking out" of a snap (moving away from preset)
 			if (Math.abs(intensity - nearestPreset) < SNAP_THRESHOLD && distance > SNAP_THRESHOLD) {
 				// Breaking out - use raw value
-				setIntensity(rawValue)
+				startTransition(() => setIntensity(rawValue))
 			} else if (distance <= SNAP_THRESHOLD) {
 				// Within snap zone - snap to preset
-				setIntensity(nearestPreset)
+				startTransition(() => setIntensity(nearestPreset))
 			} else {
 				// Not near any preset - use raw value
-				setIntensity(rawValue)
+				startTransition(() => setIntensity(rawValue))
 			}
 		} else {
-			setIntensity(rawValue)
+			startTransition(() => setIntensity(rawValue))
 		}
 	}
 
@@ -159,7 +159,7 @@ export function IntensitySlider({ disabled = false }: IntensitySliderProps) {
 							<button
 								key={preset}
 								type="button"
-								onClick={() => setIntensity(preset)}
+								onClick={() => startTransition(() => setIntensity(preset))}
 								disabled={disabled || !hasFilter}
 								className="pointer-events-auto group relative"
 								aria-label={`Set intensity to ${preset}%`}
