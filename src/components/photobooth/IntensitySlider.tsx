@@ -44,6 +44,9 @@ export function IntensitySlider({ disabled = false }: IntensitySliderProps) {
 	const selectedFilter = useFilterStore((s) => s.selectedFilter)
 	const setIntensity = useFilterStore((s) => s.setIntensity)
 
+	// React 19 useTransition for non-blocking updates
+	const [isPending, startTransition] = React.useTransition()
+
 	// Track drag state for snap behavior
 	const [isDragging, setIsDragging] = React.useState(false)
 	const [dragStartValue, setDragStartValue] = React.useState(intensity)
