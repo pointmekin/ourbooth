@@ -44,9 +44,16 @@ export function IntensitySlider({ disabled = false }: IntensitySliderProps) {
 	const selectedFilter = useFilterStore((s) => s.selectedFilter)
 	const setIntensity = useFilterStore((s) => s.setIntensity)
 
+	// Track drag state for snap behavior
+	const [isDragging, setIsDragging] = React.useState(false)
+	const [dragStartValue, setDragStartValue] = React.useState(intensity)
+
 	const handleReset = () => {
 		setIntensity(DEFAULT_INTENSITY)
 	}
+
+	// Calculate snapped value for display
+	const snappedIntensity = useSnapToPreset(intensity)
 
 	const isAtDefault = intensity === DEFAULT_INTENSITY
 	const hasFilter = selectedFilter !== null
