@@ -98,7 +98,7 @@ export function IntensitySlider({ disabled = false }: IntensitySliderProps) {
 					Intensity
 				</Label>
 				<div className="flex items-center gap-2">
-					<span className="text-sm font-semibold tabular-nums min-w-[3rem] text-right">
+					<span className={`text-sm font-semibold tabular-nums min-w-[3rem] text-right transition-opacity ${isPending ? 'opacity-70' : 'opacity-100'}`}>
 						{Math.round(intensity)}%
 					</span>
 					{hasFilter && !isAtDefault && (
