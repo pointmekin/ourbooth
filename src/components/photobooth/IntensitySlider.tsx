@@ -144,6 +144,34 @@ export function IntensitySlider({ disabled = false }: IntensitySliderProps) {
 						<option key={preset} value={preset} />
 					))}
 				</datalist>
+
+				{/* Tick marks overlay */}
+				<div
+					className="absolute inset-0 pointer-events-none flex justify-between items-center px-1"
+					aria-hidden="true"
+				>
+					{INTENSITY_PRESETS.map((preset) => {
+						const isActive = Math.abs(intensity - preset) < SNAP_THRESHOLD
+						return (
+							<button
+								key={preset}
+								type="button"
+								onClick={() => setIntensity(preset)}
+								disabled={disabled || !hasFilter}
+								className="pointer-events-auto group relative"
+								aria-label={`Set intensity to ${preset}%`}
+							>
+								<div
+									className={`
+					w-0.5 bg-muted-foreground/30 transition-all duration-150
+					${isActive ? 'h-4 bg-foreground' : 'h-2 group-hover:bg-muted-foreground/50'}
+				  `}
+									style={{ marginTop: isActive ? '-2px' : '0' }}
+								/>
+							</button>
+						)
+					})}
+				</div>
 			</div>
 
 			{/* Hint when no filter selected */}
