@@ -7,6 +7,12 @@ const DEFAULT_INTENSITY = 75
 const MIN_INTENSITY = 0
 const MAX_INTENSITY = 100
 
+const INTENSITY_PRESETS = [0, 25, 50, 75, 100] as const
+type IntensityPreset = typeof INTENSITY_PRESETS[number]
+
+// Snap threshold: distance in percentage where snap activates
+const SNAP_THRESHOLD = 5
+
 interface IntensitySliderProps {
 	disabled?: boolean
 }
