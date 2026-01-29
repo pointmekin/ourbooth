@@ -55,6 +55,35 @@ export function IntensitySlider({ disabled = false }: IntensitySliderProps) {
 	// Calculate snapped value for display
 	const snappedIntensity = useSnapToPreset(intensity)
 
+	const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const rawValue = Number(e.target.value)
+
+		// Apply snap when dragging
+		if (isDragging) {
+			const nearestPreset = INTENSITY_PRESETS.reduce((nearest, preset) => {
+				const currentDistance = Math.abs(rawValue - preset)
+				const nearestDistance = Math.abs(rawValue - nearest)
+				return currentDistance < nearestDistance ? preset : nearest
+			}, INTENSITY_PRESETS[0])
+
+			const distance = Math.abs(rawValue - nearestPreset)
+
+			// Check if we're "breaking out" of a snap (moving away from preset)
+			if (Math.abs(intensity - nearestPreset) < SNAP_THRESHOLD && distance > SNAP_THRESHOLD) {
+				// Breaking out - use raw value
+				setIntensity(rawValue)
+			} else if (distance <= SNAP_THRESHOLD) {
+				// Within snap zone - snap to preset
+				setIntensity(nearestPreset)
+			} else {
+				// Not near any preset - use raw value
+				setIntensity(rawValue)
+			}
+		} else {
+			setIntensity(rawValue)
+		}
+	}
+
 	const isAtDefault = intensity === DEFAULT_INTENSITY
 	const hasFilter = selectedFilter !== null
 
@@ -89,8 +118,14 @@ export function IntensitySlider({ disabled = false }: IntensitySliderProps) {
 					type="range"
 					min={MIN_INTENSITY}
 					max={MAX_INTENSITY}
-					value={intensity}
-					onChange={(e) => setIntensity(Number(e.target.value))}
+					value={snappedIntensity}
+					onChange={handleInputChange}
+					onMouseDown={() => {
+						setIsDragging(true)
+						setDragStartValue(intensity)
+					}}
+					onMouseUp={() => setIsDragging(false)}
+					onMouseLeave={() => setIsDragging(false)}
 					disabled={disabled || !hasFilter}
 					list="intensity-presets"
 					className="w-full h-2 bg-muted rounded-full appearance-none cursor-pointer
