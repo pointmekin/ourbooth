@@ -1,11 +1,11 @@
-import { Upload, Sparkles, Download, Camera, Wand2 } from 'lucide-react'
+import { Upload, Sparkles, Download, Camera, Wand2, Settings2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface MobileToolbarProps {
   captureMode: 'upload' | 'camera'
   onCaptureModeChange: (mode: 'upload' | 'camera') => void
-  activeTool?: 'stickers' | 'filters' | null
-  onToolChange?: (tool: 'stickers' | 'filters' | null) => void
+  activeTool?: 'stickers' | 'filters' | 'properties' | null
+  onToolChange?: (tool: 'stickers' | 'filters' | 'properties' | null) => void
   onExportToggle: () => void
 }
 
@@ -73,6 +73,22 @@ export function MobileToolbar({
             <Wand2 className="w-5 h-5" />
           </div>
           <span className="text-[10px] font-medium uppercase tracking-wider">Filters</span>
+        </Button>
+
+        {/* Properties Button */}
+        <Button
+          variant="ghost"
+          onClick={() => onToolChange?.(activeTool === 'properties' ? null : 'properties')}
+          className={`flex flex-col items-center gap-1 h-auto py-2 px-4 hover:bg-transparent ${
+            activeTool === 'properties' ? 'text-white' : 'text-neutral-400 hover:text-white'
+          }`}
+        >
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+            activeTool === 'properties' ? 'bg-white/20' : 'bg-white/5'
+          }`}>
+            <Settings2 className="w-5 h-5" />
+          </div>
+          <span className="text-[10px] font-medium uppercase tracking-wider">Props</span>
         </Button>
 
         {/* Export Button - Prominent */}

@@ -1,4 +1,5 @@
 import { useRef, useState, useCallback, useMemo } from "react";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import {
   Sheet,
   SheetContent,
@@ -28,6 +29,7 @@ export function FilterPreviewPanel({
 }: FilterPreviewPanelProps) {
   const images = usePhotoboothStore((s) => s.images);
   const setSelectedFilter = useFilterStore((s) => s.setSelectedFilter);
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
 
   // Get first captured photo as sample, or use default
   const samplePhoto = useMemo(() => {
@@ -84,69 +86,86 @@ export function FilterPreviewPanel({
     [setSelectedFilter, hasDragged],
   );
 
+  // Panel content - shared between mobile sheet and desktop sidebar
+  const panelContent = hasPhotos ? (
+    <>
+      {/* Horizontal Thumbnail Strip */}
+      <div className="relative mb-4">
+        {/* Left Fade */}
+        <div className="from-background pointer-events-none absolute top-0 bottom-0 left-0 z-10 w-6 bg-linear-to-r to-transparent" />
+        {/* Right Fade */}
+        <div className="from-background pointer-events-none absolute top-0 right-0 bottom-0 z-10 w-6 bg-linear-to-l to-transparent" />
+
+        <div
+          ref={scrollRef}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseLeave}
+          className={`scrollbar-none flex gap-3 overflow-x-auto pb-2 ${isDragging ? "cursor-grabbing select-none" : "cursor-grab"}`}
+          style={{
+            scrollBehavior: isDragging ? "auto" : "smooth",
+            paddingLeft: "1rem",
+            paddingRight: "1rem",
+          }}
+        >
+          {/* Original (no filter) */}
+          <FilterThumbnail
+            filter={null}
+            samplePhoto={samplePhoto}
+            onSelect={handleFilterSelect}
+          />
+
+          {/* All filter presets */}
+          {FILTER_PRESETS.map((filter) => (
+            <FilterThumbnail
+              key={filter.id}
+              filter={filter}
+              samplePhoto={samplePhoto}
+              onSelect={handleFilterSelect}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Intensity Slider */}
+      <div className="px-4">
+        <IntensitySlider />
+      </div>
+    </>
+  ) : (
+    <div className="w-full p-6 text-center">
+      <p className="text-muted-foreground text-sm">
+        Add photos to try filters
+      </p>
+    </div>
+  );
+
+  // Don't render anything if not open
+  if (!isOpen) return null;
+
+  // Desktop: Static sidebar
+  if (isDesktop) {
+    return (
+      <aside className="w-72 bg-background/50 backdrop-blur-xl border-r border-border p-5 overflow-y-auto flex flex-col">
+        <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">Filters</h3>
+        <p className="text-xs text-muted-foreground mb-4">Choose a filter to apply to all photos</p>
+        {panelContent}
+      </aside>
+    );
+  }
+
+  // Mobile: Sheet
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <SheetContent side="right" className="w-80 overflow-y-auto">
-        {hasPhotos ? (
-          <>
-            <SheetHeader className="mb-4">
-              <SheetTitle>Filters</SheetTitle>
-              <SheetDescription>
-                Choose a filter to apply to all photos
-              </SheetDescription>
-            </SheetHeader>
-
-            {/* Horizontal Thumbnail Strip */}
-            <div className="relative mb-4">
-              {/* Left Fade */}
-              <div className="from-background pointer-events-none absolute top-0 bottom-0 left-0 z-10 w-6 bg-linear-to-r to-transparent" />
-              {/* Right Fade */}
-              <div className="from-background pointer-events-none absolute top-0 right-0 bottom-0 z-10 w-6 bg-linear-to-l to-transparent" />
-
-              <div
-                ref={scrollRef}
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseLeave}
-                className={`scrollbar-none flex gap-3 overflow-x-auto pb-2 ${isDragging ? "cursor-grabbing select-none" : "cursor-grab"}`}
-                style={{
-                  scrollBehavior: isDragging ? "auto" : "smooth",
-                  paddingLeft: "1rem",
-                  paddingRight: "1rem",
-                }}
-              >
-                {/* Original (no filter) */}
-                <FilterThumbnail
-                  filter={null}
-                  samplePhoto={samplePhoto}
-                  onSelect={handleFilterSelect}
-                />
-
-                {/* All filter presets */}
-                {FILTER_PRESETS.map((filter) => (
-                  <FilterThumbnail
-                    key={filter.id}
-                    filter={filter}
-                    samplePhoto={samplePhoto}
-                    onSelect={handleFilterSelect}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Intensity Slider */}
-            <div className="px-4">
-              <IntensitySlider />
-            </div>
-          </>
-        ) : (
-          <div className="w-full p-6 text-center">
-            <p className="text-muted-foreground text-sm">
-              Add photos to try filters
-            </p>
-          </div>
-        )}
+        <SheetHeader className="mb-4">
+          <SheetTitle>Filters</SheetTitle>
+          <SheetDescription>
+            Choose a filter to apply to all photos
+          </SheetDescription>
+        </SheetHeader>
+        {panelContent}
       </SheetContent>
     </Sheet>
   );

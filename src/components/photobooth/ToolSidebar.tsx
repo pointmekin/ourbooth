@@ -7,6 +7,7 @@ import {
   LogOut,
   Camera,
   ImageIcon,
+  Settings2,
   LucideIcon,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
@@ -21,8 +22,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 interface ToolSidebarProps {
   captureMode: "upload" | "camera";
   onCaptureModeChange: (mode: "upload" | "camera") => void;
-  activeTool?: "stickers" | "filters" | null;
-  onToolChange?: (tool: "stickers" | "filters" | null) => void;
+  activeTool?: "stickers" | "filters" | "properties" | null;
+  onToolChange?: (tool: "stickers" | "filters" | "properties" | null) => void;
 }
 
 function ToolIcon({
@@ -93,6 +94,12 @@ export function ToolSidebar({
           icon={Camera}
           active={captureMode === "camera"}
           onClick={() => onCaptureModeChange("camera")}
+        />
+        <ToolIcon
+          label="Properties"
+          icon={Settings2}
+          active={activeTool === "properties"}
+          onClick={() => onToolChange?.(activeTool === "properties" ? null : "properties")}
         />
         <ToolIcon
           label="Stickers"
