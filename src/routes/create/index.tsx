@@ -138,19 +138,10 @@ function PhotoboothEditor() {
       />
 
       {/* Filter Panel */}
-      {activeTool === 'filters' && (
-        <div className="fixed inset-y-0 right-0 w-80 bg-background/95 backdrop-blur-xl border-l border-border shadow-xl z-50 overflow-y-auto">
-          <div className="p-4">
-            <button
-              onClick={() => setActiveTool(null)}
-              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
-            >
-              Close
-            </button>
-            <FilterPreviewPanel />
-          </div>
-        </div>
-      )}
+      <FilterPreviewPanel
+        isOpen={activeTool === 'filters'}
+        onClose={() => setActiveTool(null)}
+      />
 
       {/* Mobile Bottom Toolbar */}
       <MobileToolbar

@@ -21,11 +21,9 @@ export function PhotoStrip({
   const stripRef = useRef<HTMLDivElement>(null)
   const { images, stickers, selectedTemplate, customFooterText, addSticker } = usePhotoboothStore()
 
-  // Subscribe to filter state
-  const { selectedFilter, intensity } = useFilterStore((s) => ({
-    selectedFilter: s.selectedFilter,
-    intensity: s.intensity
-  }))
+  // Subscribe to filter state (direct selection to prevent infinite loop)
+  const selectedFilter = useFilterStore((s) => s.selectedFilter)
+  const intensity = useFilterStore((s) => s.intensity)
 
   // Memoize filter style for performance
   const filterStyle = useMemo(() => {
