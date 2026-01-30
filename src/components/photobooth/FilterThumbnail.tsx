@@ -31,8 +31,8 @@ export const FilterThumbnail = memo(function FilterThumbnail({
   return (
     <button
       onClick={() => onSelect(filter?.id ?? null)}
-      className={`relative w-20 h-20 md:w-24 md:h-24 rounded-lg overflow-hidden
-        border-2 transition-all duration-200 shrink-0
+      className={`relative w-14 h-14 md:w-16 md:h-16 rounded-lg overflow-hidden
+        border-2 transition-all duration-200
         ${isSelected
           ? 'border-primary ring-2 ring-primary/50 scale-105 shadow-lg'
           : 'border-transparent hover:border-border hover:scale-105'

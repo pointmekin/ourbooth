@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback, useMemo } from "react";
+import { useMemo, useCallback } from "react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import {
   Sheet,
@@ -39,100 +39,41 @@ export function FilterPreviewPanel({
 
   const hasPhotos = images.some((img) => img !== null);
 
-  // Drag scroll state (following TemplateGallery pattern)
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [scrollLeftStart, setScrollLeftStart] = useState(0);
-
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (!scrollRef.current) return;
-    setIsDragging(true);
-    setStartX(e.pageX - scrollRef.current.offsetLeft);
-    setScrollLeftStart(scrollRef.current.scrollLeft);
-  }, []);
-
-  const handleMouseMove = useCallback(
-    (e: React.MouseEvent) => {
-      if (!isDragging || !scrollRef.current) return;
-      e.preventDefault();
-      const x = e.pageX - scrollRef.current.offsetLeft;
-      const walk = x - startX;
-      scrollRef.current.scrollLeft = scrollLeftStart - walk;
-    },
-    [isDragging, startX, scrollLeftStart],
-  );
-
-  const handleMouseUp = useCallback(() => {
-    setTimeout(() => setIsDragging(false), 0);
-  }, []);
-
-  const handleMouseLeave = useCallback(() => {
-    setIsDragging(false);
-  }, []);
-
-  const hasDragged = useCallback(() => {
-    if (!scrollRef.current) return false;
-    return Math.abs(scrollRef.current.scrollLeft - scrollLeftStart) > 5;
-  }, [scrollLeftStart]);
-
   const handleFilterSelect = useCallback(
     (filterId: FilterType | null) => {
-      // Only change selection if this wasn't a drag action
-      if (!hasDragged()) {
-        setSelectedFilter(filterId);
-      }
+      setSelectedFilter(filterId);
     },
-    [setSelectedFilter, hasDragged],
+    [setSelectedFilter],
   );
 
   // Panel content - shared between mobile sheet and desktop sidebar
   const panelContent = hasPhotos ? (
-    <>
-      {/* Horizontal Thumbnail Strip */}
-      <div className="relative mb-4">
-        {/* Left Fade */}
-        <div className="from-background pointer-events-none absolute top-0 bottom-0 left-0 z-10 w-6 bg-linear-to-r to-transparent" />
-        {/* Right Fade */}
-        <div className="from-background pointer-events-none absolute top-0 right-0 bottom-0 z-10 w-6 bg-linear-to-l to-transparent" />
+    <div className="flex flex-col gap-4 px-4 lg:px-0">
+      {/* Wrapping Grid of Filter Thumbnails */}
+      <div className="grid grid-cols-3 gap-2 px-1">
+        {/* Original (no filter) */}
+        <FilterThumbnail
+          filter={null}
+          samplePhoto={samplePhoto}
+          onSelect={handleFilterSelect}
+        />
 
-        <div
-          ref={scrollRef}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseLeave}
-          className={`scrollbar-none flex gap-3 overflow-x-auto pb-2 ${isDragging ? "cursor-grabbing select-none" : "cursor-grab"}`}
-          style={{
-            scrollBehavior: isDragging ? "auto" : "smooth",
-            paddingLeft: "1rem",
-            paddingRight: "1rem",
-          }}
-        >
-          {/* Original (no filter) */}
+        {/* All filter presets */}
+        {FILTER_PRESETS.map((filter) => (
           <FilterThumbnail
-            filter={null}
+            key={filter.id}
+            filter={filter}
             samplePhoto={samplePhoto}
             onSelect={handleFilterSelect}
           />
-
-          {/* All filter presets */}
-          {FILTER_PRESETS.map((filter) => (
-            <FilterThumbnail
-              key={filter.id}
-              filter={filter}
-              samplePhoto={samplePhoto}
-              onSelect={handleFilterSelect}
-            />
-          ))}
-        </div>
+        ))}
       </div>
 
       {/* Intensity Slider */}
-      <div className="px-4">
+      <div className="px-1">
         <IntensitySlider />
       </div>
-    </>
+    </div>
   ) : (
     <div className="w-full p-6 text-center">
       <p className="text-muted-foreground text-sm">
