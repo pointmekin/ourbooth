@@ -6,6 +6,7 @@ import { authClient } from '@/lib/auth-client'
 import { exportPhotoboothFn } from '@/server/export'
 import { usePhotoboothStore, RESOLUTION_OPTIONS, type ExportResolution } from '@/stores/photobooth-store'
 import { useFilterStore } from '@/stores/filter-store'
+import { useMediaQuery } from '@/hooks/use-media-query'
 import {
   Sheet,
   SheetContent,
@@ -13,6 +14,13 @@ import {
   SheetTitle,
   SheetFooter,
 } from '@/components/ui/sheet'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 
 interface ExportSheetProps {
@@ -23,6 +31,7 @@ interface ExportSheetProps {
 export function ExportSheet({ isOpen, onClose }: ExportSheetProps) {
   const navigate = useNavigate()
   const { data: session } = authClient.useSession()
+  const isDesktop = useMediaQuery('(min-width: 768px)')
   
   const {
     images,
@@ -105,31 +114,35 @@ export function ExportSheet({ isOpen, onClose }: ExportSheetProps) {
     onClose()
   }
 
-  return (
-    <Sheet open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <SheetContent 
-        side="bottom" 
-        className="bg-neutral-950 border-white/10 text-white rounded-t-3xl max-h-[85vh] md:max-h-[90vh] md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:bottom-auto md:top-1/2 md:-translate-y-1/2 md:w-100 md:rounded-2xl md:border"
-      >
-        {exportedUrl ? (
-          /* Success Screen */
-          <>
-            <SheetHeader className="p-0 pb-4">
-              <SheetTitle className="text-lg font-bold text-white">Ready to Save!</SheetTitle>
+  // Shared content for both mobile Sheet and desktop Dialog
+  const renderContent = () => (
+    <>
+      {exportedUrl ? (
+        /* Success Screen */
+        <>
+          {isDesktop ? (
+            <DialogHeader className="p-0 pb-5">
+              <DialogTitle className="text-lg font-bold">Ready to Save!</DialogTitle>
+            </DialogHeader>
+          ) : (
+            <SheetHeader className="p-0 pb-5">
+              <SheetTitle className="text-lg font-bold">Ready to Save!</SheetTitle>
             </SheetHeader>
+          )}
 
-            {/* Preview */}
-            <div className="mb-4 rounded-xl overflow-hidden border border-white/10 bg-black/40 flex justify-center">
-              <img 
-                src={exportedUrl} 
-                alt="Your exported photo" 
-                className="max-w-full max-h-[45vh] w-auto h-auto object-contain"
-              />
-            </div>
+          {/* Preview */}
+          <div className="mb-5 rounded-xl overflow-hidden border border-border bg-muted/40 flex justify-center">
+            <img 
+              src={exportedUrl} 
+              alt="Your exported photo" 
+              className="max-w-full max-h-[45vh] w-auto h-auto object-contain"
+            />
+          </div>
 
-            {/* Action Buttons */}
-            <SheetFooter className="flex-col gap-3 p-0 mt-0">
-              <Button asChild className="w-full bg-linear-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white font-bold rounded-xl h-12">
+          {/* Action Buttons */}
+          {isDesktop ? (
+            <DialogFooter className="flex-col gap-3 p-0 mt-0 sm:flex-col">
+              <Button asChild className="w-full h-12 rounded-xl font-bold">
                 <a
                   href={exportedUrl}
                   download={`ourbooth-${Date.now()}.${exportType === 'gif' ? 'gif' : 'png'}`}
@@ -139,7 +152,7 @@ export function ExportSheet({ isOpen, onClose }: ExportSheetProps) {
                 </a>
               </Button>
               
-              <Button asChild variant="outline" className="w-full border-white/20 text-white hover:bg-white/5 rounded-xl h-11">
+              <Button asChild variant="outline" className="w-full h-11 rounded-xl">
                 <a
                   href={exportedUrl}
                   target="_blank"
@@ -153,77 +166,136 @@ export function ExportSheet({ isOpen, onClose }: ExportSheetProps) {
               <Button
                 variant="ghost"
                 onClick={handleClose}
-                className="w-full text-neutral-400 hover:text-white"
+                className="w-full text-muted-foreground hover:text-foreground"
+              >
+                Done
+              </Button>
+            </DialogFooter>
+          ) : (
+            <SheetFooter className="flex-col gap-3 p-0 mt-0">
+              <Button asChild className="w-full h-12 rounded-xl font-bold">
+                <a
+                  href={exportedUrl}
+                  download={`ourbooth-${Date.now()}.${exportType === 'gif' ? 'gif' : 'png'}`}
+                >
+                  <Download className="w-5 h-5 mr-2" />
+                  Save to Photos
+                </a>
+              </Button>
+              
+              <Button asChild variant="outline" className="w-full h-11 rounded-xl">
+                <a
+                  href={exportedUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Open in New Tab
+                </a>
+              </Button>
+
+              <Button
+                variant="ghost"
+                onClick={handleClose}
+                className="w-full text-muted-foreground hover:text-foreground"
               >
                 Done
               </Button>
             </SheetFooter>
-          </>
-        ) : (
-          /* Export Settings */
-          <>
-            <SheetHeader className="p-0 pb-4">
-              <SheetTitle className="text-lg font-bold text-white">Export Settings</SheetTitle>
+          )}
+        </>
+      ) : (
+        /* Export Settings */
+        <>
+          {isDesktop ? (
+            <DialogHeader className="p-0 pb-5">
+              <DialogTitle className="text-lg font-bold">Export Settings</DialogTitle>
+            </DialogHeader>
+          ) : (
+            <SheetHeader className="p-0 pb-5">
+              <SheetTitle className="text-lg font-bold">Export Settings</SheetTitle>
             </SheetHeader>
+          )}
 
-            {/* Format Selection */}
-            <div className="mb-5">
-              <label className="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2 block">Format</label>
-              <div className="flex gap-2">
+          {/* Format Selection */}
+          <div className="space-y-2 mb-5">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider block">Format</label>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setExportType('png')}
+                className={`flex-1 h-12 rounded-lg transition-all ${
+                  exportType === 'png' 
+                    ? 'border-primary bg-primary/10 text-primary' 
+                    : 'text-muted-foreground'
+                }`}
+              >
+                <FileImage className="w-5 h-5 mr-2" />
+                PNG
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setExportType('gif')}
+                className={`flex-1 h-12 rounded-lg transition-all ${
+                  exportType === 'gif' 
+                    ? 'border-primary bg-primary/10 text-primary' 
+                    : 'text-muted-foreground'
+                }`}
+              >
+                <Film className="w-5 h-5 mr-2" />
+                GIF
+              </Button>
+            </div>
+          </div>
+
+          {/* Resolution Selection */}
+          <div className="space-y-2 mb-6">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider block">Quality</label>
+            <div className="flex gap-3">
+              {RESOLUTION_OPTIONS.map((opt) => (
                 <Button
+                  key={opt.value}
                   variant="outline"
-                  onClick={() => setExportType('png')}
-                  className={`flex-1 h-12 rounded-lg transition-all ${
-                    exportType === 'png' 
-                      ? 'border-rose-500 bg-rose-500/10 text-rose-400' 
-                      : 'border-white/10 hover:border-white/20 text-neutral-400'
+                  onClick={() => setExportResolution(opt.value as ExportResolution)}
+                  className={`flex-1 h-10 rounded-lg transition-all ${
+                    exportResolution === opt.value 
+                      ? 'border-primary bg-primary/10 text-primary' 
+                      : 'text-muted-foreground'
                   }`}
                 >
-                  <FileImage className="w-5 h-5 mr-2" />
-                  PNG
+                  {opt.label}
                 </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setExportType('gif')}
-                  className={`flex-1 h-12 rounded-lg transition-all ${
-                    exportType === 'gif' 
-                      ? 'border-rose-500 bg-rose-500/10 text-rose-400' 
-                      : 'border-white/10 hover:border-white/20 text-neutral-400'
-                  }`}
-                >
-                  <Film className="w-5 h-5 mr-2" />
-                  GIF
-                </Button>
-              </div>
+              ))}
             </div>
+          </div>
 
-            {/* Resolution Selection */}
-            <div className="mb-6">
-              <label className="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2 block">Quality</label>
-              <div className="flex gap-2">
-                {RESOLUTION_OPTIONS.map((opt) => (
-                  <Button
-                    key={opt.value}
-                    variant="outline"
-                    onClick={() => setExportResolution(opt.value as ExportResolution)}
-                    className={`flex-1 h-10 rounded-lg transition-all ${
-                      exportResolution === opt.value 
-                        ? 'border-rose-500 bg-rose-500/10 text-rose-400' 
-                        : 'border-white/10 hover:border-white/20 text-neutral-400'
-                    }`}
-                  >
-                    {opt.label}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            {/* Export Button */}
+          {/* Export Button */}
+          {isDesktop ? (
+            <DialogFooter className="p-0 mt-0 sm:flex-col">
+              <Button
+                onClick={handleExport}
+                disabled={isExporting}
+                className="w-full h-12 font-bold rounded-xl"
+              >
+                {isExporting ? (
+                  <>
+                    <Sparkles className="w-5 h-5 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-5 h-5 mr-2" />
+                    Export {exportType.toUpperCase()}
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          ) : (
             <SheetFooter className="p-0 mt-0">
               <Button
                 onClick={handleExport}
                 disabled={isExporting}
-                className="w-full h-12 bg-linear-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white font-bold rounded-xl shadow-[0_0_30px_-5px_rgba(225,29,72,0.5)]"
+                className="w-full h-12 font-bold rounded-xl"
               >
                 {isExporting ? (
                   <>
@@ -238,8 +310,31 @@ export function ExportSheet({ isOpen, onClose }: ExportSheetProps) {
                 )}
               </Button>
             </SheetFooter>
-          </>
-        )}
+          )}
+        </>
+      )}
+    </>
+  )
+
+  // Desktop: Centered Dialog with zoom animation
+  if (isDesktop) {
+    return (
+      <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+        <DialogContent className="sm:max-w-md p-6" showCloseButton={false}>
+          {renderContent()}
+        </DialogContent>
+      </Dialog>
+    )
+  }
+
+  // Mobile: Bottom Sheet with slide animation
+  return (
+    <Sheet open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+      <SheetContent 
+        side="bottom" 
+        className="p-4 rounded-t-3xl max-h-[85vh]"
+      >
+        {renderContent()}
       </SheetContent>
     </Sheet>
   )
