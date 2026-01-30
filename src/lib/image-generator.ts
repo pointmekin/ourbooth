@@ -1,5 +1,8 @@
 import sharp from 'sharp'
 import { getTemplateById, TEMPLATES } from '@/data/templates'
+import { applyFiltersToImage } from './image-processor'
+import { getFilterById } from '@/constants/filters'
+import type { FilterType } from '@/types/filters'
 
 export type StickerType = 'emoji' | 'image'
 
@@ -20,6 +23,9 @@ interface GenerateOptions {
     quality?: number
     scaleFactor?: number // Multiplier for sticker sizes when exporting at higher res
     customFooterText?: string // User-provided footer text override
+    // Filter support
+    filterType?: FilterType | null
+    filterIntensity?: number
 }
 
 /**
@@ -205,7 +211,26 @@ export async function generatePhotoStrip(
         try {
             // Convert data URL to buffer
             const base64Data = dataUrl.replace(/^data:image\/\w+;base64,/, '')
-            const imageBuffer = Buffer.from(base64Data, 'base64')
+            let imageBuffer = Buffer.from(base64Data, 'base64')
+
+            // Apply filter if selected (before resize and composite)
+            if (options.filterType && options.filterIntensity && options.filterIntensity > 0) {
+                const filterPreset = getFilterById(options.filterType)
+                if (filterPreset) {
+                    try {
+                        imageBuffer = await applyFiltersToImage(
+                            imageBuffer,
+                            filterPreset.parameters,
+                            options.filterIntensity
+                        )
+                    } catch (error) {
+                        // Log technical details
+                        console.error(`[ImageGenerator] Failed to apply filter to image ${i}:`, error)
+                        // Re-throw to block entire export as per requirements
+                        throw error
+                    }
+                }
+            }
 
             // Resize and crop to fit cell, auto-rotate based on EXIF orientation
             let resizedImage = await sharp(imageBuffer)

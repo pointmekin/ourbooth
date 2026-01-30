@@ -1,17 +1,19 @@
-import { Upload, Sparkles, Download, Camera } from 'lucide-react'
+import { Upload, Sparkles, Download, Camera, Wand2, Settings2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface MobileToolbarProps {
   captureMode: 'upload' | 'camera'
   onCaptureModeChange: (mode: 'upload' | 'camera') => void
-  onStickersToggle: () => void
+  activeTool?: 'stickers' | 'filters' | 'properties' | null
+  onToolChange?: (tool: 'stickers' | 'filters' | 'properties' | null) => void
   onExportToggle: () => void
 }
 
-export function MobileToolbar({ 
-  captureMode, 
-  onCaptureModeChange, 
-  onStickersToggle,
+export function MobileToolbar({
+  captureMode,
+  onCaptureModeChange,
+  activeTool,
+  onToolChange,
   onExportToggle
 }: MobileToolbarProps) {
   
@@ -44,13 +46,49 @@ export function MobileToolbar({
         {/* Decorate Button */}
         <Button
           variant="ghost"
-          onClick={onStickersToggle}
-          className="flex flex-col items-center gap-1 h-auto py-2 px-4 text-neutral-400 hover:text-white hover:bg-transparent"
+          onClick={() => onToolChange?.(activeTool === 'stickers' ? null : 'stickers')}
+          className={`flex flex-col items-center gap-1 h-auto py-2 px-4 hover:bg-transparent ${
+            activeTool === 'stickers' ? 'text-white' : 'text-neutral-400 hover:text-white'
+          }`}
         >
-          <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center">
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+            activeTool === 'stickers' ? 'bg-white/20' : 'bg-white/5'
+          }`}>
             <Sparkles className="w-5 h-5" />
           </div>
           <span className="text-[10px] font-medium uppercase tracking-wider">Decorate</span>
+        </Button>
+
+        {/* Filters Button */}
+        <Button
+          variant="ghost"
+          onClick={() => onToolChange?.(activeTool === 'filters' ? null : 'filters')}
+          className={`flex flex-col items-center gap-1 h-auto py-2 px-4 hover:bg-transparent ${
+            activeTool === 'filters' ? 'text-white' : 'text-neutral-400 hover:text-white'
+          }`}
+        >
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+            activeTool === 'filters' ? 'bg-white/20' : 'bg-white/5'
+          }`}>
+            <Wand2 className="w-5 h-5" />
+          </div>
+          <span className="text-[10px] font-medium uppercase tracking-wider">Filters</span>
+        </Button>
+
+        {/* Properties Button */}
+        <Button
+          variant="ghost"
+          onClick={() => onToolChange?.(activeTool === 'properties' ? null : 'properties')}
+          className={`flex flex-col items-center gap-1 h-auto py-2 px-4 hover:bg-transparent ${
+            activeTool === 'properties' ? 'text-white' : 'text-neutral-400 hover:text-white'
+          }`}
+        >
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+            activeTool === 'properties' ? 'bg-white/20' : 'bg-white/5'
+          }`}>
+            <Settings2 className="w-5 h-5" />
+          </div>
+          <span className="text-[10px] font-medium uppercase tracking-wider">Props</span>
         </Button>
 
         {/* Export Button - Prominent */}

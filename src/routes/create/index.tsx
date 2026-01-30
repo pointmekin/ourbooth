@@ -9,10 +9,12 @@ import {
   PhotoStrip,
   CameraView,
   PropertiesPanel,
+  StickersPanel,
   ToolSidebar,
   MobileToolbar,
   TemplateGallery,
   ExportSheet,
+  FilterPreviewPanel,
 } from '@/components/photobooth'
 
 import { Photobooth3DExperience } from '@/components/3d/Experience'
@@ -28,7 +30,7 @@ function PhotoboothEditor() {
   
   const [hasStarted, setHasStarted] = useState(false)
   const [captureMode, setCaptureMode] = useState<'upload' | 'camera'>('upload')
-  const [isPropertiesOpen, setIsPropertiesOpen] = useState(false)
+  const [activeTool, setActiveTool] = useState<'stickers' | 'filters' | 'properties' | null>(null)
   const [isExportOpen, setIsExportOpen] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('fit')
   // Unique key to force 3D experience remount on browser navigation
@@ -69,12 +71,29 @@ function PhotoboothEditor() {
   }
 
   // Show editor after template is selected
+  // Layout: [ToolSidebar] [Panels] [Main Canvas]
   return (
     <div className="h-dvh bg-background font-sans selection:bg-rose-500/30 flex overflow-hidden">
-      {/* Left Sidebar - Desktop */}
+      {/* Left Sidebar - Tool Icons (Desktop) */}
       <ToolSidebar
         captureMode={captureMode}
         onCaptureModeChange={handleCaptureModeChange}
+        activeTool={activeTool}
+        onToolChange={setActiveTool}
+      />
+
+      {/* Panels - Between ToolSidebar and Main Canvas */}
+      <PropertiesPanel
+        isOpen={activeTool === 'properties'}
+        onClose={() => setActiveTool(null)}
+      />
+      <StickersPanel
+        isOpen={activeTool === 'stickers'}
+        onClose={() => setActiveTool(null)}
+      />
+      <FilterPreviewPanel
+        isOpen={activeTool === 'filters'}
+        onClose={() => setActiveTool(null)}
       />
 
       {/* Main Canvas Area */}
@@ -128,17 +147,12 @@ function PhotoboothEditor() {
         )}
       </main>
 
-      {/* Right Sidebar - Properties */}
-      <PropertiesPanel
-        isOpen={isPropertiesOpen}
-        onClose={() => setIsPropertiesOpen(false)}
-      />
-
       {/* Mobile Bottom Toolbar */}
       <MobileToolbar
         captureMode={captureMode}
         onCaptureModeChange={handleCaptureModeChange}
-        onStickersToggle={() => setIsPropertiesOpen(!isPropertiesOpen)}
+        activeTool={activeTool}
+        onToolChange={setActiveTool}
         onExportToggle={() => setIsExportOpen(true)}
       />
 
@@ -150,4 +164,3 @@ function PhotoboothEditor() {
     </div>
   )
 }
-

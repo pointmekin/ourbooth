@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__analytics-mcp__get_account_summaries",
+      "mcp__analytics-mcp__run_report",
+      "Skill(glm-plan-usage:usage-query-skill)"
+    ]
+  }
+}

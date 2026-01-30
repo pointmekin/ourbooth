@@ -1,5 +1,6 @@
 import { createServerFn } from '@tanstack/react-start'
 import { getRequest } from '@tanstack/react-start/server'
+import type { FilterType } from '@/types/filters'
 
 export type StickerType = 'emoji' | 'image'
 
@@ -22,6 +23,9 @@ interface ExportInput {
     previewHeight?: number // Actual preview height for pixel-perfect export
     scaleFactor?: number   // Resolution multiplier (1x, 2x, 4x)
     customFooterText?: string // User-provided footer text
+    // Filter parameters from UI
+    filterType?: FilterType | null
+    filterIntensity?: number
 }
 
 export const exportPhotoboothFn = createServerFn({ method: 'POST' })
@@ -69,18 +73,21 @@ export const exportPhotoboothFn = createServerFn({ method: 'POST' })
             }
 
             console.log(`[Export] Generating ${exportType} for user ${userId}, template: ${templateId}, images: ${validImages.length}, scaleFactor: ${data.scaleFactor}`)
+            console.log(`[Export] Filter: ${data.filterType || 'none'}, intensity: ${data.filterIntensity || 0}`)
 
             // Use client-specified scale factor or default to 4x
             const scaleFactor = data.scaleFactor ?? 4
             const exportWidth = (data.previewWidth ?? 400) * scaleFactor
 
             // Generate the image at higher resolution
-            const imageBuffer = await generatePhotoStrip(validImages, { 
-                templateId, 
+            const imageBuffer = await generatePhotoStrip(validImages, {
+                templateId,
                 stickers,
                 width: exportWidth,
                 scaleFactor,
                 customFooterText: data.customFooterText,
+                filterType: data.filterType,
+                filterIntensity: data.filterIntensity,
             })
             const contentType = 'image/png'
             const fileExtension = 'png'
