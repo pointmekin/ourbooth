@@ -26,7 +26,7 @@ function LandingPage() {
   return (
     <div className="min-h-screen bg-background text-foreground font-sans selection:bg-rose-500/30 overflow-x-hidden">
       {/* Navigation */}
-      <nav className="fixed w-full z-50 mix-blend-difference px-6 py-6 flex justify-between items-center bg-background/50 backdrop-blur-md">
+      <nav className="fixed w-full z-50 px-6 py-6 flex justify-between items-center bg-background/80 backdrop-blur-md border-b border-border/50">
         <div className="text-xl font-bold tracking-tighter">OURBOOTH</div>
         {/* Desktop Nav */}
         <div className="hidden md:flex gap-8 text-sm font-medium tracking-wide">
@@ -82,7 +82,7 @@ function LandingPage() {
       {/* Hero Section */}
       <section className="relative h-screen flex flex-col items-center justify-center text-center p-6">
           {/* Background Effects */}
-          <div className="absolute inset-0 bg-neutral-900 z-0" />
+          <div className="absolute inset-0 bg-muted z-0" />
           <div className="absolute inset-0 bg-linear-to-b from-background/20 via-background/80 to-background z-0 pointer-events-none" />
 
           <div className="relative z-10 max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-1000">
@@ -112,8 +112,8 @@ function LandingPage() {
       </section>
 
       {/* Feature Marquee */}
-      <div className="border-y border-white/10 bg-black py-4 overflow-hidden whitespace-nowrap">
-          <div className="inline-flex gap-12 text-neutral-500 font-mono text-xs tracking-widest uppercase">
+      <div className="border-y border-border bg-background py-4 overflow-hidden whitespace-nowrap">
+          <div className="inline-flex gap-12 text-muted-foreground font-mono text-xs tracking-widest uppercase">
               {Array(10).fill("• High Fidelity 4K Export • Real Film Grain • Cloud Storage • Privacy First").map((text, i) => (
                   <span key={i}>{text}</span>
               ))}
@@ -121,10 +121,10 @@ function LandingPage() {
       </div>
 
       {/* Footer */}
-      <footer className="py-20 px-6 border-t border-white/5 mt-20">
+      <footer className="py-20 px-6 border-t border-border mt-20">
           <div className="max-w-7xl mx-auto flex flex-col items-center">
              <h4 className="text-2xl font-bold tracking-tighter mb-4">OURBOOTH</h4>
-             <p className="text-neutral-500 text-sm">© 2025 Chompooh Inc.</p>
+             <p className="text-muted-foreground text-sm">© 2025 Chompooh Inc.</p>
           </div>
       </footer>
     </div>
