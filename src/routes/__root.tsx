@@ -41,6 +41,25 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         href: appCss,
       },
     ],
+    scripts: [
+      {
+        // Apply theme immediately to prevent flash
+        innerHTML: `
+          (function() {
+            try {
+              const theme = localStorage.getItem("vite-ui-theme");
+              const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+              const resolvedTheme = theme === "system" ? systemTheme : theme || systemTheme;
+              
+              document.documentElement.classList.remove("light", "dark");
+              document.documentElement.classList.add(resolvedTheme);
+            } catch (e) {
+              console.error("Failed to apply theme:", e);
+            }
+          })();
+        `,
+      },
+    ],
   }),
 
   shellComponent: RootDocument,
