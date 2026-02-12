@@ -6,6 +6,7 @@ type ThemeProviderProps = {
   children: React.ReactNode
   defaultTheme?: Theme
   storageKey?: string
+  serverTheme?: Theme
 }
 
 type ThemeProviderState = {
@@ -24,19 +25,40 @@ export function ThemeProvider({
   children,
   defaultTheme = "system",
   storageKey = "vite-ui-theme",
+  serverTheme = "system",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(defaultTheme)
+  // Initialize from server theme first, then localStorage
+  const getInitialTheme = (): Theme => {
+    if (typeof window === "undefined") return serverTheme
 
-  // Sync with localStorage on client mount
+    // Prefer localStorage for client-side navigation
+    try {
+      const stored = localStorage.getItem(storageKey) as Theme | null
+      if (stored) return stored
+    } catch (e) {
+      // Ignore localStorage errors
+    }
+
+    return serverTheme || defaultTheme
+  }
+
+  const [theme, setTheme] = useState<Theme>(getInitialTheme())
+
+  // Sync theme changes to localStorage (for client nav)
   useEffect(() => {
+    if (typeof window === "undefined") return
+
     const stored = localStorage.getItem(storageKey) as Theme | null
-    if (stored) {
+    if (stored && stored !== theme) {
       setTheme(stored)
     }
   }, [storageKey])
 
+  // Apply theme class to document
   useEffect(() => {
+    if (typeof window === "undefined") return
+
     const root = window.document.documentElement
 
     root.classList.remove("light", "dark")
@@ -57,8 +79,14 @@ export function ThemeProvider({
   const value = {
     theme,
     setTheme: (newTheme: Theme) => {
+      // Save to localStorage for client-side navigation
       localStorage.setItem(storageKey, newTheme)
       setTheme(newTheme)
+
+      // Call server function to update cookie
+      import("@/server/theme").then(({ setThemeServerFn }) => {
+        setThemeServerFn({ data: newTheme })
+      })
     },
   }
 
