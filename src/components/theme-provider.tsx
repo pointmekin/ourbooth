@@ -28,39 +28,13 @@ export function ThemeProvider({
   serverTheme = "system",
   ...props
 }: ThemeProviderProps) {
-  // Initialize from server theme first, then localStorage
-  const getInitialTheme = (): Theme => {
-    if (typeof window === "undefined") return serverTheme
-
-    // Prefer localStorage for client-side navigation
-    try {
-      const stored = localStorage.getItem(storageKey) as Theme | null
-      if (stored) return stored
-    } catch (e) {
-      // Ignore localStorage errors
-    }
-
-    return serverTheme || defaultTheme
-  }
-
-  const [theme, setTheme] = useState<Theme>(getInitialTheme())
-
-  // Sync theme changes to localStorage (for client nav)
-  useEffect(() => {
-    if (typeof window === "undefined") return
-
-    const stored = localStorage.getItem(storageKey) as Theme | null
-    if (stored && stored !== theme) {
-      setTheme(stored)
-    }
-  }, [storageKey])
+  const [theme, setTheme] = useState<Theme>(serverTheme)
 
   // Apply theme class to document
   useEffect(() => {
     if (typeof window === "undefined") return
 
     const root = window.document.documentElement
-
     root.classList.remove("light", "dark")
 
     if (theme === "system") {
@@ -79,11 +53,14 @@ export function ThemeProvider({
   const value = {
     theme,
     setTheme: (newTheme: Theme) => {
-      // Save to localStorage for client-side navigation
-      localStorage.setItem(storageKey, newTheme)
       setTheme(newTheme)
 
-      // Call server function to update cookie
+      // Set cookie directly on client for immediate effect
+      if (typeof window !== "undefined") {
+        document.cookie = `theme=${newTheme}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`
+      }
+
+      // Call server function to update cookie (on the server-side state if needed)
       import("@/server/theme").then(({ setThemeServerFn }) => {
         setThemeServerFn({ data: newTheme })
       })

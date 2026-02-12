@@ -19,12 +19,14 @@ interface MyRouterContext {
 }
 
 // Helper to resolve the actual theme (handles "system" preference)
-function resolveTheme(theme: string): "dark" | "light" {
-  if (theme !== "system") return theme as "dark" | "light";
-
-  // During SSR, we can't detect system preference, default to light
-  // The inline script will handle system preference on the client
-  return "light";
+function resolveTheme(theme: string): string {
+  if (theme === "system" || !theme) {
+    if (typeof window === "undefined") return "";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
+  }
+  return theme;
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
@@ -33,10 +35,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
     return await getThemeServerFn()
   },
 
-  head: (ctx) => {
-    const theme = ctx.loaderData || "system"
-    const resolvedTheme = resolveTheme(theme)
-
+  head: () => {
     return {
       meta: [
         {
@@ -63,37 +62,27 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       scripts: [
         {
           // Inline script to apply theme immediately before hydration
-          // This is a fallback that syncs cookie to localStorage
-          innerHTML: `
+          children: `
             (function() {
               try {
-                // Get theme from cookie first (server set)
-                const cookies = document.cookie.split(';').reduce((acc, c) => {
-                  const [key, val] = c.trim().split('=');
-                  acc[key] = val;
-                  return acc;
-                }, {});
+                const getCookie = (name) => {
+                  const value = '; ' + document.cookie;
+                  const parts = value.split('; ' + name + '=');
+                  if (parts.length === 2) return parts.pop().split(';').shift();
+                };
 
-                const cookieTheme = cookies['theme'];
-
-                // Sync cookie to localStorage for client nav
-                if (cookieTheme) {
-                  localStorage.setItem("vite-ui-theme", cookieTheme);
+                const theme = getCookie('theme') || 'system';
+                const root = document.documentElement;
+                
+                root.classList.remove("light", "dark");
+                
+                if (theme === "system") {
+                  const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+                  root.classList.add(systemTheme);
+                } else {
+                  root.classList.add(theme);
                 }
-
-                // If no cookie, check localStorage
-                const storedTheme = cookieTheme || localStorage.getItem("vite-ui-theme");
-                
-                // Resolve system preference
-                const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-                const theme = storedTheme === "system" ? systemTheme : (storedTheme || systemTheme);
-                
-                // Apply to document immediately
-                document.documentElement.classList.remove("light", "dark");
-                document.documentElement.classList.add(theme);
-              } catch (e) {
-                console.error("Failed to apply theme:", e);
-              }
+              } catch (e) {}
             })();
           `,
         },
@@ -110,7 +99,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   const resolvedTheme = resolveTheme(theme)
 
   return (
-    <html lang="en" className={resolvedTheme}>
+    <html lang="en" className={resolvedTheme} suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>
