@@ -26,7 +26,21 @@ export function ThemeProvider({
   storageKey = "vite-ui-theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(defaultTheme)
+  // Initialize theme synchronously from localStorage to prevent flash
+  const getInitialTheme = (): Theme => {
+    if (typeof window === "undefined") return defaultTheme
+    
+    try {
+      const stored = localStorage.getItem(storageKey) as Theme | null
+      if (stored) return stored
+    } catch (e) {
+      // Ignore localStorage errors
+    }
+    
+    return defaultTheme
+  }
+
+  const [theme, setTheme] = useState<Theme>(getInitialTheme())
 
   // Sync with localStorage on client mount
   useEffect(() => {
